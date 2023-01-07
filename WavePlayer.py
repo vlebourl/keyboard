@@ -49,10 +49,10 @@ class WavePlayer(object):
 
     def play(self):
         """Play the wave file."""
-        data = self.wave_file.readframes(1024)
+        data = self.wave_file.readframes(32)
         while data != "":
             self.stream.write(data)
-            data = self.wave_file.readframes(1024)
+            data = self.wave_file.readframes(32)
 
     def close(self):
         """Close the wave file and terminate the pyAudio player."""
