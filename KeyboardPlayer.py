@@ -48,12 +48,12 @@ class Keyboard:
         if letter in {"\x03", "\x04"}:
             os.system("systemctl poweroff")
 
-        if not letter.isalpha():
-            return
         if letter == "\n":
             # say the word
             self.player.play(self.tts.generate(self.word))
             self.word = ""
+            return
+        if not letter.isalpha():
             return
         self.word += letter
         self.player.play(self.tts.generate(letter))
