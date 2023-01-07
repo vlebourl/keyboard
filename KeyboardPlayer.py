@@ -53,11 +53,14 @@ class Keyboard:
         if letter == "\n":
             # say the word
             self.player.open_wave_string(self.tts.generate(self.word))
+            self.player.play()
+            self.player.close()
             self.word = ""
             return
         self.word += letter
         self.player.open_wave_string(self.tts.generate(letter))
         self.player.play()
+        self.player.close()
 
     def loop(self):
         """Loop forever, getting a letter and processing it."""
