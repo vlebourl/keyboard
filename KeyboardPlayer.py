@@ -43,10 +43,10 @@ class Keyboard:
 
         Args:
             letter (str): The letter to process.
-        """
-        # if Ctrl-C or Ctrl-D, power off
-        if letter in {"\x03", "\x04"}:
-            os.system("systemctl poweroff")
+        """        
+        if letter in {"\x1b", "\x03", "\x04"}:
+            self.player.play(self.tts.generate("Je m'éteins, au revoir."))
+            os.system("sudo systemctl poweroff")
 
         if letter == "\n":
             # say the word
