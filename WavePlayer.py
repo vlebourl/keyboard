@@ -17,7 +17,10 @@ class WavePlayer(object):
         self.wave_file = None
         self.stream = None
 
-    def open_wave_string(self, wave_string):
+    def __del__(self):
+        self.player.terminate()
+    
+    def _open_wave_string(self, wave_string):
         """Open a wave file with io and prepare to play it.
 
         Args:
@@ -32,7 +35,7 @@ class WavePlayer(object):
             output=True,
         )
 
-    def open_file(self, filename):
+    def _open_file(self, filename):
         """Open a wave file and prepare to play it.
 
         Args:
@@ -47,16 +50,21 @@ class WavePlayer(object):
             output=True,
         )
 
-    def play(self):
-        """Play the wave file."""
-        data = self.wave_file.readframes(32)
-        while data != "":
-            self.stream.write(data)
-            data = self.wave_file.readframes(32)
-
     def close(self):
         """Close the wave file and terminate the pyAudio player."""
         self.stream.close()
 
-    def __del__(self):
-        self.player.terminate()
+    def play(self, string, type="string"):
+        """Play the wave file."""
+        if type == "file":
+            self._open_file(string)
+        elif type == "string":
+            self._open_wave_string(string)
+        else:
+            raise ValueError("Type must be 'file' or 'string'")
+        data = self.wave_file.readframes(32)
+        while data != "":
+            self.stream.write(data)
+            data = self.wave_file.readframes(32)
+        self.close()
+

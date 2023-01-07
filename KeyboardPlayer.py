@@ -45,22 +45,18 @@ class Keyboard:
             letter (str): The letter to process.
         """
         # if Ctrl-C or Ctrl-D, power off
-        if letter == "\x03" or letter == "\x04":
+        if letter in {"\x03", "\x04"}:
             os.system("systemctl poweroff")
 
         if not letter.isalpha():
             return
         if letter == "\n":
             # say the word
-            self.player.open_wave_string(self.tts.generate(self.word))
-            self.player.play()
-            self.player.close()
+            self.player.play(self.tts.generate(self.word))
             self.word = ""
             return
         self.word += letter
-        self.player.open_wave_string(self.tts.generate(letter))
-        self.player.play()
-        self.player.close()
+        self.player.play(self.tts.generate(letter))
 
     def loop(self):
         """Loop forever, getting a letter and processing it."""

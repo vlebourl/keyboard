@@ -5,14 +5,9 @@ name = "pypi"
 
 [packages]
 getch = "*"
-pyttsx3 = "*"
+pyaudio = "*"
 
 [dev-packages]
-black = "*"
-isort = "*"
-flake8 = "*"
-mypy = "*"
-pre-commit = "*"
 
 [requires]
 python_version = "3.10"
