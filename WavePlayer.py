@@ -62,9 +62,9 @@ class WavePlayer(object):
             self._open_wave_string(string)
         else:
             raise ValueError("Type must be 'file' or 'string'")
-        data = self.wave_file.readframes(32)
-        while data != "":
+        data = self.wave_file.readframes(1024)
+        while data != b'':
             self.stream.write(data)
-            data = self.wave_file.readframes(32)
+            data = self.wave_file.readframes(1024)
         self.close()
 
