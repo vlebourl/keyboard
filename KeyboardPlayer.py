@@ -45,7 +45,7 @@ class Keyboard:
             letter (str): The letter to process.
         """
         # if Ctrl-C or Ctrl-D, power off
-        if letter == "\x03" or letter == "\x04":
+        if letter in {"\x03", "\x04"}:
             os.system("systemctl poweroff")
 
         if not letter.isalpha():
