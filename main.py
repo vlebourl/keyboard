@@ -3,8 +3,6 @@ main file
 """
 
 from KeyboardPlayer import Keyboard
-from Pico import TTS
-from WavePlayer import WavePlayer
 
 if __name__ == '__main__':
     keyboard = Keyboard()
