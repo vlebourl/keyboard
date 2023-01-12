@@ -5,7 +5,9 @@ name = "pypi"
 
 [packages]
 getch = "*"
-pyttsx3 = "*"
+pyaudio = "*"
+gtts = "*"
+pygame = "*"
 
 [dev-packages]
 black = "*"

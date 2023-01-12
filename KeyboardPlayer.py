@@ -16,12 +16,12 @@ class Keyboard:
     When a key is pressed, the key is converted to a wave file
     and played.
     When Enter is pressed, the word is converted to a wave file
-    and played then the word is cleared.
+    and played then the word is cleared
     """
 
-    def __init__(self):
-        self.player = WavePlayer()
-        self.tts = TTS()
+    def __init__(self, internet: bool = False):
+        self.player = WavePlayer(internet)
+        self.tts = TTS(internet)
         self.word = ""
         self.letters = []
 
@@ -48,12 +48,13 @@ class Keyboard:
         if letter in {"\x03", "\x04"}:
             os.system("systemctl poweroff")
 
-        if not letter.isalpha():
-            return
-        if letter == "\n":
+        # if letter is "\n" or "space"
+        if letter in {"\n", " "}:
             # say the word
             self.player.open_wave_string(self.tts.generate(self.word))
             self.word = ""
+            return
+        if not letter.isalpha():
             return
         self.word += letter
         self.player.open_wave_string(self.tts.generate(letter))

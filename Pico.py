@@ -7,8 +7,6 @@ import tempfile
 
 from gtts import gTTS
 
-from util import internet_on
-
 VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
 
@@ -80,7 +78,7 @@ class GoogleTTS:
         self._language = language[:2]
 
     def generate(self, text: str) -> str:
-        """Generate a mp3 file from text
+        """Generate a wav string from text
 
         Args:
             text (str): text to convert
@@ -89,22 +87,21 @@ class GoogleTTS:
             str: the wave in string format
         """
         tts = gTTS(text=text, lang=self._language)
-        with io.BytesIO() as bytes_io:
-            tts.write_to_fp(bytes_io)
-            bytes_io.seek(0)
-            return bytes_io.read()
-
+        file = io.BytesIO()
+        tts.write_to_fp(file)
+        return file
 
 class TTS:
     """Generate a wave file from text using Pico TTS."""
 
-    def __init__(self, language: str = "fr-FR"):
+    def __init__(self, internet: bool = False, language: str = "fr-FR"):
         """Initialize the Pico TTS engine.
 
         Args:
+            internet (bool, optional): Use Google TTS if True. Defaults to False.
             language (str, optional): Language to speak in. Defaults to "en-US".
         """
-        self.tts = GoogleTTS() if internet_on() else PicoTTS()
+        self.tts = GoogleTTS() if internet else PicoTTS()
         self.tts.set_voice(language)
 
     def generate(self, text: str) -> str:
