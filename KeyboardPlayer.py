@@ -56,7 +56,7 @@ class Keyboard:
             letter (str): The letter to process.
         """
         # if Ctrl-C or Ctrl-D, power off
-        if letter in {"\x03", "\x04"}:
+        if letter in {"\x03", "\x04", "\x1b"}:
             os.system("systemctl poweroff")
 
         # if letter is "\n" or "space"
