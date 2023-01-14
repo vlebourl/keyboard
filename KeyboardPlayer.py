@@ -2,13 +2,24 @@
 """
 import os
 
-from getch import getch
+# from getch import getch
 
 from Pico import TTS
 
 # Import classes from other files
 from WavePlayer import WavePlayer
 
+
+import sys, tty, termios
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
 
 class Keyboard:
     """Keyboard Class
@@ -49,15 +60,18 @@ class Keyboard:
             os.system("systemctl poweroff")
 
         # if letter is "\n" or "space"
-        if letter in {"\n", " "}:
+        if letter in {"\n", " ", "\r"}:
             # say the word
+            if self.word == "":
+                return
             self.player.open_wave_string(self.tts.generate(self.word))
+            self.player.play()
             self.word = ""
             return
-        if not letter.isalpha():
+        if not letter.isalnum():
             return
         self.word += letter
-        self.player.open_wave_string(self.tts.generate(letter))
+        self.player.open_wave_string(self.tts.generate(f" {letter} "))
         self.player.play()
 
     def loop(self):

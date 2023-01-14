@@ -3,6 +3,7 @@ A class to open a wav file and play it through pyAudio.
 """
 
 import io
+import time
 import wave
 
 import pyaudio
@@ -45,6 +46,8 @@ class WavePlayer(object):
         """Play the wave file."""
         if self._internet:
             self.player.music.play()
+            while self.player.music.get_busy():  # wait for music to finish playing
+                time.sleep(0.01)
             return
         data = self.wave_file.readframes(1024)
         while data != "":
