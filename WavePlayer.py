@@ -59,4 +59,5 @@ class WavePlayer(object):
         self.stream.close()
 
     def __del__(self):
-        self.player.terminate()
+        if not self._internet:
+            self.player.terminate()
