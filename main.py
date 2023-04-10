@@ -163,7 +163,9 @@ class PygameWavePlayer:
         wav_io = io.BytesIO()
         audio_segment.export(wav_io, format="wav")
         wav_io.seek(0)
-        self.generated_words[text] = wav_io.read()
+        wav_data = wav_io.read()
+        self.generated_words[text] = wav_data
+
 
     def open_wave_string_and_play(self, text, wave_string=None):
         """
@@ -183,12 +185,14 @@ class PygameWavePlayer:
             wav_io.seek(0)
             wav_data = wav_io.read()
             self.generated_words[text] = wav_data
+
         sound = pygame.mixer.Sound(io.BytesIO(wav_data))
         sound.play()
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
         if self.word_count[text] >= 2:
             self.generated_words[text] = wav_data
+
 
 
     def load_common_words(self):
