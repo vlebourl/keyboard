@@ -1,3 +1,4 @@
+import AudioSegment
 import contextlib
 import io
 import logging
@@ -159,8 +160,8 @@ class PygameWavePlayer:
         :param text: The text to be preloaded
         """
         wav = self.tts.generate(text)
-        sound = pygame.mixer.Sound(io.BytesIO(wav))
-        self.generated_words[text] = sound
+        wav_io = self._wave_io(wav)
+        self.generated_words[text] = wav_io.read()
 
     def open_wave_string_and_play(self, text, wave_string=None):
         """
@@ -174,13 +175,22 @@ class PygameWavePlayer:
         else:
             if wave_string is None:
                 wave_string = self.tts.generate(text)
-            sound = pygame.mixer.Sound(io.BytesIO(wave_string))
-            self.generated_words[text] = sound
+            wav_io = self._wave_io(wave_string)
+            sound = pygame.mixer.Sound(wav_io)
+            self.generated_words[text] = wav_io.read()
         sound.play()
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
         if self.word_count[text] >= 2:
             self.generated_words[text] = sound
+
+    # TODO Rename this here and in `preload_sound` and `open_wave_string_and_play`
+    def _wave_io(self, arg0):
+        audio_segment = AudioSegment.from_file(io.BytesIO(arg0), format="mp3")
+        result = io.BytesIO()
+        audio_segment.export(result, format="wav")
+        result.seek(0)
+        return result
 
     def load_common_words(self):
         """
