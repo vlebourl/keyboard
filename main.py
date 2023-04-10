@@ -287,6 +287,7 @@ if __name__ == "__main__":
     for letter in common_letters:
         if f" {letter} " not in keyboard.player.generated_words:
             keyboard.player.preload_sound(f" {letter} ")
+    keyboard.player.save_common_words()
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
 
