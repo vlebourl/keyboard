@@ -10,6 +10,7 @@ import tempfile
 import termios
 import threading
 import time
+import wave
 from concurrent.futures import ThreadPoolExecutor
 
 import simpleaudio as sa
@@ -41,10 +42,10 @@ def wave_obj_from_wav_bytes(wav_bytes):
         f.write(wav_bytes)
         f.flush()
 
-    wave_obj = sa.WaveObject.from_wave_file(f.name)
+    with wave.open(f.name, 'rb') as wave_file:
+        wave_obj = sa.WaveObject.from_wave_read(wave_file)
     os.remove(f.name)
     return wave_obj
-
 
 class PicoTTS:
     """
