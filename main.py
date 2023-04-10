@@ -1,4 +1,3 @@
-import AudioSegment
 import contextlib
 import io
 import logging
@@ -12,7 +11,7 @@ import termios
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-
+from pydub import AudioSegment
 from gtts import gTTS
 
 logging.basicConfig(
@@ -160,7 +159,10 @@ class PygameWavePlayer:
         :param text: The text to be preloaded
         """
         wav = self.tts.generate(text)
-        wav_io = self._wave_io(wav)
+        audio_segment = AudioSegment.from_file(io.BytesIO(wav), format="mp3")
+        wav_io = io.BytesIO()
+        audio_segment.export(wav_io, format="wav")
+        wav_io.seek(0)
         self.generated_words[text] = wav_io.read()
 
     def open_wave_string_and_play(self, text, wave_string=None):
@@ -171,26 +173,23 @@ class PygameWavePlayer:
         :param wave_string: Optional WAV data as bytes, if available
         """
         if text in self.generated_words:
-            sound = self.generated_words[text]
+            wav_data = self.generated_words[text]
         else:
             if wave_string is None:
                 wave_string = self.tts.generate(text)
-            wav_io = self._wave_io(wave_string)
-            sound = pygame.mixer.Sound(wav_io)
-            self.generated_words[text] = wav_io.read()
+            audio_segment = AudioSegment.from_file(io.BytesIO(wave_string), format="mp3")
+            wav_io = io.BytesIO()
+            audio_segment.export(wav_io, format="wav")
+            wav_io.seek(0)
+            wav_data = wav_io.read()
+            self.generated_words[text] = wav_data
+        sound = pygame.mixer.Sound(io.BytesIO(wav_data))
         sound.play()
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
         if self.word_count[text] >= 2:
-            self.generated_words[text] = sound
+            self.generated_words[text] = wav_data
 
-    # TODO Rename this here and in `preload_sound` and `open_wave_string_and_play`
-    def _wave_io(self, arg0):
-        audio_segment = AudioSegment.from_file(io.BytesIO(arg0), format="mp3")
-        result = io.BytesIO()
-        audio_segment.export(result, format="wav")
-        result.seek(0)
-        return result
 
     def load_common_words(self):
         """
@@ -297,13 +296,13 @@ if __name__ == "__main__":
     logging.info("Preloading common letters")
     for letter in common_letters:
         if f" {letter} " not in keyboard.player.generated_words:
-            logging.info(" - Preloading letter: %s", letter)
+            logging.info("    Preloading letter: %s", letter)
             keyboard.player.preload_sound(f" {letter} ")
     keyboard.player.save_common_words()
 
     logging.info("Preloaded words are:")
     for word in keyboard.player.generated_words.keys():
-        logging.info(" - %s", word)
+        logging.info("    %s", word)
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
 
