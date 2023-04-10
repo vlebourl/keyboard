@@ -8,6 +8,7 @@ import termios
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+
 import pygame
 from gtts import gTTS
 
@@ -69,26 +70,26 @@ class PygameMP3Player:
                 time.sleep(0.01)
 
     def open_mp3_string_and_play(self, text, mp3_data=None):
-        if text in self.generated_words:
-            mp3_data = self.generated_words[text]
-        else:
-            if mp3_data is None:
-                mp3_data = self.tts.generate(text)
-            self.generated_words[text] = mp3_data
+        mp3_data = self.generated_words.get(text, None)
+        if mp3_data is None:
+            mp3_data = self.tts.generate(text)
 
         self.play_mp3_data(mp3_data)
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
-        if self.word_count[text] >= 2:
-            self.generated_words[text]
+        if self.word_count[text] > 2:
+            self.generated_words[text] = mp3_data
 
     def load_common_words(self):
         with contextlib.suppress(FileNotFoundError):
             with open(COMMON_WORDS_FILE, "r") as f:
-                self.generated_words = {k: bytes.fromhex(v) for k, v in json.load(f).items()}
+                self.generated_words = {
+                    k: bytes.fromhex(v) for k, v in json.load(f).items()
+                }
 
     def save_common_words(self):
         with open(COMMON_WORDS_FILE, "w") as f:
+            logging.info("Saving %d words", len(self.generated_words))
             json.dump({k: v.hex() for k, v in self.generated_words.items()}, f)
 
     def periodic_save(self, interval):
