@@ -1,6 +1,7 @@
 import contextlib
 import io
 import logging
+import os
 import pickle
 import socket
 import subprocess
@@ -34,6 +35,15 @@ def preload_sounds_parallel(keyboard, letters):
     """
     with ThreadPoolExecutor() as executor:
         executor.map(keyboard.player.preload_sound, letters)
+
+def wave_obj_from_wav_bytes(wav_bytes):
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+        f.write(wav_bytes)
+        f.flush()
+
+    wave_obj = sa.WaveObject.from_wave_file(f.name)
+    os.remove(f.name)
+    return wave_obj
 
 
 class PicoTTS:
@@ -157,7 +167,7 @@ class WavePlayer:
         :param text: The text to be preloaded
         """
         wav = self.tts.generate(text)
-        wave_obj = sa.WaveObject.from_wave_file(io.BytesIO(wav))
+        wave_obj = wave_obj_from_wav_bytes(wav)
         self.generated_words[text] = wave_obj
 
     def open_wave_string_and_play(self, text, wave_string=None):
@@ -172,7 +182,7 @@ class WavePlayer:
         else:
             if wave_string is None:
                 wave_string = self.tts.generate(text)
-            wave_obj = sa.WaveObject.from_wave_file(io.BytesIO(wave_string))
+            wave_obj = wave_obj_from_wav_bytes(wave_string)
             self.generated_words[text] = wave_obj
         wave_obj.play()
 
@@ -285,7 +295,9 @@ if __name__ == "__main__":
     common_letters = "abcdefghijklmnopqrstuvwxyz1234567890"
     for letter in common_letters:
         if f" {letter} " not in keyboard.player.generated_words:
-            keyboard.player.preload_sound(f" {letter} ")
+            wav = keyboard.tts.generate(f" {letter} ")
+            wave_obj = wave_obj_from_wav_bytes(wav)
+            keyboard.player.generated_words[f" {letter} "] = wave_obj
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
 
