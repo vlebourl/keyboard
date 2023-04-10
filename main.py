@@ -1,7 +1,7 @@
 import contextlib
 import io
+import json
 import logging
-import pickle
 import pygame
 import socket
 import subprocess
@@ -22,7 +22,7 @@ logging.basicConfig(
 
 VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
-COMMON_WORDS_FILE = "common_words.pickle"
+COMMON_WORDS_FILE = "common_words.json"
 
 
 def preload_sounds_parallel(keyboard, letters):
@@ -197,26 +197,22 @@ class PygameWavePlayer:
 
     def load_common_words(self):
         """
-        Load common words from the pickle file, if available.
+        Load common words from the JSON file, if available.
         """
-        # suppress FileNotFoundError if the pickle file does not exist
-        # suppress EOFError if the pickle file is empty
-        with contextlib.suppress(FileNotFoundError, EOFError):
-            with open(COMMON_WORDS_FILE, "rb") as f:
-                self.generated_words = pickle.load(f)
+        with contextlib.suppress(FileNotFoundError):
+            with open(COMMON_WORDS_FILE, "r") as f:
+                self.generated_words = {k: bytes.fromhex(v) for k, v in json.load(f).items()}
 
     def save_common_words(self):
         """
-        Save common words to the pickle file.
+        Save common words to the JSON file.
         """
-        with open(COMMON_WORDS_FILE, "wb") as f:
-            # log the number of words saved
-            logging.info("Saving %d words to %s", len(self.generated_words), COMMON_WORDS_FILE)
-            pickle.dump(self.generated_words, f)
+        with open(COMMON_WORDS_FILE, "w") as f:
+            json.dump({k: v.hex() for k, v in self.generated_words.items()}, f)
 
     def periodic_save(self, interval):
         """
-        Periodically save common words to the pickle file.
+        Periodically save common words to the json file.
 
         :param interval: Time interval in seconds between saves
         """
