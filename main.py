@@ -204,6 +204,8 @@ class PygameWavePlayer:
         Save common words to the pickle file.
         """
         with open(COMMON_WORDS_FILE, "wb") as f:
+            # log the number of words saved
+            logging.info("Saving %d words to %s", len(self.generated_words), COMMON_WORDS_FILE)
             pickle.dump(self.generated_words, f)
 
     def periodic_save(self, interval):
