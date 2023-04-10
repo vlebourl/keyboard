@@ -81,7 +81,8 @@ class PygameMP3Player:
             self.generated_words[text] = mp3_data
 
     def load_common_words(self):
-        with contextlib.suppress(FileNotFoundError):
+        # suppress FileNotFoundError and json.decoder.JSONDecodeError
+        with contextlib.suppress(FileNotFoundError, json.decoder.JSONDecodeError):
             with open(COMMON_WORDS_FILE, "r") as f:
                 self.generated_words = {
                     k: bytes.fromhex(v) for k, v in json.load(f).items()
