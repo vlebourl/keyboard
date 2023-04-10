@@ -2,7 +2,7 @@
 """
 import os
 
-from getch import getch
+# from getch import getch
 
 from Pico import TTS
 
@@ -10,18 +10,29 @@ from Pico import TTS
 from WavePlayer import WavePlayer
 
 
+import sys, tty, termios
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
 class Keyboard:
     """Keyboard Class
     This class is used to play each key stroke as a wave file.
     When a key is pressed, the key is converted to a wave file
     and played.
     When Enter is pressed, the word is converted to a wave file
-    and played then the word is cleared.
+    and played then the word is cleared
     """
 
-    def __init__(self):
-        self.player = WavePlayer()
-        self.tts = TTS()
+    def __init__(self, internet: bool = False):
+        self.player = WavePlayer(internet)
+        self.tts = TTS(internet)
         self.word = ""
         self.letters = []
 
@@ -43,20 +54,27 @@ class Keyboard:
 
         Args:
             letter (str): The letter to process.
-        """        
-        if letter in {"\x1b", "\x03", "\x04"}:
-            self.player.play(self.tts.generate("Je m'éteins, au revoir."))
-            os.system("sudo systemctl poweroff")
+        """
+        # if Ctrl-C or Ctrl-D, power off
+        # if letter in {"\x03", "\x04"}:
+        #     self.word = "Au revoir"
+        #     self.process_letter("\n")
+        #     os.system("systemctl poweroff")
 
-        if letter == "\n":
+        # if letter is "\n" or "space"
+        if letter in {"\n", " ", "\r"}:
             # say the word
-            self.player.play(self.tts.generate(self.word))
+            if self.word == "":
+                return
+            self.player.open_wave_string(self.tts.generate(self.word))
+            self.player.play()
             self.word = ""
             return
-        if not letter.isalpha():
+        if not letter.isalnum():
             return
         self.word += letter
-        self.player.play(self.tts.generate(letter))
+        self.player.open_wave_string(self.tts.generate(f" {letter} "))
+        self.player.play()
 
     def loop(self):
         """Loop forever, getting a letter and processing it."""
