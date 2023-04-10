@@ -284,10 +284,16 @@ if __name__ == "__main__":
 
     # Preload most common letters
     common_letters = "abcdefghijklmnopqrstuvwxyz1234567890"
+    logging.info("Preloading common letters")
     for letter in common_letters:
         if f" {letter} " not in keyboard.player.generated_words:
+            logging.info(" - Preloading letter: %s", letter)
             keyboard.player.preload_sound(f" {letter} ")
     keyboard.player.save_common_words()
+
+    logging.info("Preloaded words are:")
+    for word in keyboard.player.generated_words.keys():
+        logging.info(" - %s", word)
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
 
