@@ -1,18 +1,26 @@
 import contextlib
 import io
+import pickle
 import socket
 import subprocess
 import sys
 import tempfile
 import termios
+import threading
 import time
-import wave
+from concurrent.futures import ThreadPoolExecutor
 
-import pyaudio
-import pygame.mixer
+import simpleaudio as sa
 from gtts import gTTS
 
 VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
+
+COMMON_WORDS_FILE = "common_words.pickle"
+
+
+def preload_sounds_parallel(keyboard, letters):
+    with ThreadPoolExecutor() as executor:
+        executor.map(keyboard.player.preload_sound, letters)
 
 
 class PicoTTS:
@@ -54,71 +62,79 @@ class TTS:
 
 
 class WavePlayer:
-    def __init__(self, internet=False):
+    def __init__(self, tts, internet=False):
+        self.tts = tts
         self._internet = internet
-        if self._internet:
-            pygame.mixer.init()
-            self.player = pygame.mixer
+        self.generated_words = {}
+        self.word_count = {}
+
+        if internet:
+            self.load_common_words()
+
+    def preload_sound(self, text):
+        wav = self.tts.generate(text)
+        wave_obj = sa.WaveObject.from_wave_file(io.BytesIO(wav))
+        self.generated_words[text] = wave_obj
+
+    def open_wave_string_and_play(self, text, wave_string=None):
+        if text in self.generated_words:
+            wave_obj = self.generated_words[text]
         else:
-            self.player = pyaudio.PyAudio()
+            if wave_string is None:
+                wave_string = self.tts.generate(text)
+            wave_obj = sa.WaveObject.from_wave_file(io.BytesIO(wave_string))
+            self.generated_words[text] = wave_obj
+        wave_obj.play()
 
-    def open_wave_string_and_play(self, wave_string):
-        if self._internet:
-            self.player.music.load(wave_string, "mp3")
-            self.player.music.play()
-            while self.player.music.get_busy():
-                time.sleep(0.01)
-        else:
-            with wave.open(io.BytesIO(wave_string), "rb") as wave_file:
-                stream = self.player.open(
-                    format=self.player.get_format_from_width(wave_file.getsampwidth()),
-                    channels=wave_file.getnchannels(),
-                    rate=wave_file.getframerate(),
-                    output=True,
-                )
+        self.word_count[text] = self.word_count.get(text, 0) + 1
+        if self.word_count[text] >= 2:
+            self.generated_words[text] = wave_obj
 
-                data = wave_file.readframes(1024)
-                while data:
-                    stream.write(data)
-                    data = wave_file.readframes(1024)
+    def load_common_words(self):
+        with contextlib.suppress(FileNotFoundError):
+            with open(COMMON_WORDS_FILE, "rb") as f:
+                self.generated_words = pickle.load(f)
 
-                stream.close()
+    def save_common_words(self):
+        with open(COMMON_WORDS_FILE, "wb") as f:
+            pickle.dump(self.generated_words, f)
 
-    def close(self):
-        if not self._internet:
-            self.player.terminate()
-
-
-def getch():
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        termios.tcsetattr(fd, termios.TCSAFLUSH, old_settings)
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return ch
+    def periodic_save(self, interval):
+        while True:
+            time.sleep(interval)
+            self.save_common_words()
 
 
 class Keyboard:
     def __init__(self, internet=False):
-        self.player = WavePlayer(internet)
         self.tts = TTS(internet)
+        self.player = WavePlayer(self.tts, internet)
         self.word = ""
 
     def get_one_letter(self):
-        return getch()
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            new_settings = termios.tcgetattr(fd)
+            new_settings[3] = new_settings[3] & ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(fd, termios.TCSAFLUSH, new_settings)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
 
     def process_letter(self, letter: str) -> None:
         if letter in {"\n", " ", "\r"}:
             if self.word:
-                self.player.open_wave_string_and_play(self.tts.generate(self.word))
+                self.player.open_wave_string_and_play(
+                    self.word
+                )  # Pass the word without the wave_string
                 self.word = ""
             return
         if not letter.isalnum():
             return
         self.word += letter
-        self.player.open_wave_string_and_play(self.tts.generate(f" {letter} "))
+        self.player.open_wave_string_and_play(f" {letter} ")
 
     def loop(self):
         letter = self.get_one_letter()
@@ -127,19 +143,31 @@ class Keyboard:
             letter = self.get_one_letter()
 
 
-def internet_on():
+if __name__ == "__main__":
+    internet = False
     with contextlib.suppress(Exception):
         host = socket.gethostbyname("www.google.com")
         socket.create_connection((host, 80), 2)
-        return True
-    return False
+        internet = True
 
-
-if __name__ == "__main__":
-    internet = internet_on()
     keyboard = Keyboard(internet)
+
+    # Preload most common letters
+    common_letters = "abcdefghijklmnopqrstuvwxyz1234567890"
+    for letter in common_letters:
+        if f" {letter} " not in keyboard.player.generated_words:
+            keyboard.player.preload_sound(f" {letter} ")
+
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
+
     if internet:
         keyboard.word += " Internet actif."
     keyboard.process_letter("\n")
+
+    # Launch a new thread to periodically save common words
+    save_thread = threading.Thread(
+        target=keyboard.player.periodic_save, args=(300,), daemon=True
+    )
+    save_thread.start()
+
     keyboard.loop()
