@@ -1,10 +1,7 @@
-import contextlib
 import io
 import json
 import logging
-import pygame
 import socket
-import subprocess
 import sys
 import tempfile
 import termios
@@ -12,6 +9,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pydub import AudioSegment
+from pydub.playback import play
 from gtts import gTTS
 
 logging.basicConfig(
@@ -34,42 +32,6 @@ def preload_sounds_parallel(keyboard, letters):
     """
     with ThreadPoolExecutor() as executor:
         executor.map(keyboard.player.preload_sound, letters)
-
-
-class PicoTTS:
-    """
-    Wrapper around Pico TTS system.
-    """
-
-    def __init__(self, voice="en-US"):
-        """
-        Initialize PicoTTS with a voice.
-
-        :param voice: A string representing the voice language (default: "en-US")
-        """
-        self._voice = voice
-
-    def generate(self, txt):
-        """
-        Generate WAV data for the given text using Pico TTS.
-
-        :param txt: The text to be converted to speech
-        :return: The WAV data as bytes
-        """
-        with tempfile.NamedTemporaryFile(suffix=".wav") as f:
-            args = ["pico2wave", "-l", self._voice, "-w", f.name, txt]
-            subprocess.run(args, check=True)
-            f.seek(0)
-            wav = f.read()
-        return wav
-
-    def set_voice(self, v):
-        """
-        Set the voice language for Pico TTS.
-
-        :param v: A string representing the voice language
-        """
-        self._voice = v
 
 
 class GoogleTTS:
@@ -95,10 +57,10 @@ class GoogleTTS:
 
     def generate(self, text):
         """
-        Generate WAV data for the given text using Google TTS API.
+        Generate MP3 data for the given text using Google TTS API.
 
         :param text: The text to be converted to speech
-        :return: The WAV data as bytes
+        :return: The MP3 data as bytes
         """
         tts = gTTS(text=text, lang=self._language)
         file = io.BytesIO()
@@ -106,51 +68,22 @@ class GoogleTTS:
         return file.getvalue()
 
 
-class TTS:
+class PydubMP3Player:
     """
-    Text-to-Speech class that supports both PicoTTS and GoogleTTS.
-    """
-
-    def __init__(self, internet=False, language="fr-FR"):
-        """
-        Initialize TTS with the given settings.
-
-        :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
-        :param language: A string representing the language (default: "fr-FR")
-        """
-        self.tts = GoogleTTS(language) if internet else PicoTTS(language)
-
-    def generate(self, text):
-        """
-        Generate WAV data for the given text using the selected TTS system.
-
-        :param text: The text to be converted to speech
-                :return: The WAV data as bytes
-        """
-        return self.tts.generate(text)
-
-
-class PygameWavePlayer:
-    """
-    Class responsible for playing and managing the WAV data using pygame.mixer.
+    Class responsible for playing and managing the MP3 data using pydub.playback.
     """
 
-    def __init__(self, tts, internet=False):
+    def __init__(self, tts):
         """
-        Initialize PygameWavePlayer with the given TTS system and settings.
+        Initialize PydubMP3Player with the given TTS system.
 
-        :param tts: An instance of TTS class
-        :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
+        :param tts: An instance of GoogleTTS class
         """
         self.tts = tts
-        self._internet = internet
         self.generated_words = {}
         self.word_count = {}
 
-        pygame.mixer.init()
-
-        if internet:
-            self.load_common_words()
+        self.load_common_words()
 
     def preload_sound(self, text):
         """
@@ -158,42 +91,29 @@ class PygameWavePlayer:
 
         :param text: The text to be preloaded
         """
-        wav = self.tts.generate(text)
-        audio_segment = AudioSegment.from_file(io.BytesIO(wav), format="mp3")
-        wav_io = io.BytesIO()
-        audio_segment.export(wav_io, format="wav")
-        wav_io.seek(0)
-        wav_data = wav_io.read()
-        self.generated_words[text] = wav_data
+        mp3_data = self.tts.generate(text)
+        self.generated_words[text] = mp3_data
 
-
-    def open_wave_string_and_play(self, text, wave_string=None):
+    def open_mp3_string_and_play(self, text, mp3_data=None):
         """
         Play the sound associated with the given text.
 
         :param text: The text whose sound will be played
-        :param wave_string: Optional WAV data as bytes, if available
+        :param mp3_data: Optional MP3 data as bytes, if available
         """
         if text in self.generated_words:
-            wav_data = self.generated_words[text]
+            mp3_data = self.generated_words[text]
         else:
-            if wave_string is None:
-                wave_string = self.tts.generate(text)
-            audio_segment = AudioSegment.from_file(io.BytesIO(wave_string), format="mp3")
-            wav_io = io.BytesIO()
-            audio_segment.export(wav_io, format="wav")
-            wav_io.seek(0)
-            wav_data = wav_io.read()
-            self.generated_words[text] = wav_data
+            if mp3_data is None:
+                mp3_data = self.tts.generate(text)
+            self.generated_words[text] = mp3_data
 
-        sound = pygame.mixer.Sound(io.BytesIO(wav_data))
-        sound.play()
+        audio_segment = AudioSegment.from_file(io.BytesIO(mp3_data), format="mp3")
+        play(audio_segment)
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
         if self.word_count[text] >= 2:
-            self.generated_words[text] = wav_data
-
-
+                        self.generated_words[text] = mp3_data
 
     def load_common_words(self):
         """
@@ -220,19 +140,18 @@ class PygameWavePlayer:
             time.sleep(interval)
             self.save_common_words()
 
+
 class Keyboard:
     """
     Class responsible for handling user input and playing corresponding sounds.
     """
 
-    def __init__(self, internet=False):
+    def __init__(self):
         """
-        Initialize Keyboard with the given settings.
-
-        :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
+        Initialize Keyboard.
         """
-        self.tts = TTS(internet)
-        self.player = PygameWavePlayer(self.tts, internet)
+        self.tts = GoogleTTS()
+        self.player = PydubMP3Player(self.tts)
         self.word = ""
 
     def get_one_letter(self):
@@ -261,15 +180,13 @@ class Keyboard:
         if letter in {"\n", " ", "\r"}:
             if self.word:
                 logging.info("playing word: %s", self.word)
-                self.player.open_wave_string_and_play(
-                    self.word
-                )  # Pass the word without the wave_string
+                self.player.open_mp3_string_and_play(self.word)
                 self.word = ""
             return
         if not letter.isalnum():
             return
         self.word += letter
-        self.player.open_wave_string_and_play(f" {letter} ")
+        self.player.open_mp3_string_and_play(f" {letter} ")
 
     def loop(self):
         """
@@ -284,16 +201,7 @@ class Keyboard:
 if __name__ == "__main__":
     logging.info("Starting talking keyboard")
 
-    internet = False
-    with contextlib.suppress(Exception):
-        host = socket.gethostbyname("www.google.com")
-        socket.create_connection((host, 80), 2)
-        internet = True
-
-    logging.info(f"Internet status: {internet}")
-
-
-    keyboard = Keyboard(internet)
+    keyboard = Keyboard()
 
     # Preload most common letters
     common_letters = "abcdefghijklmnopqrstuvwxyz1234567890"
@@ -309,9 +217,6 @@ if __name__ == "__main__":
         logging.info("    %s", word)
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
-
-    if internet:
-        keyboard.word += " Internet actif."
     keyboard.process_letter("\n")
 
     # Launch a new thread to periodically save common words
