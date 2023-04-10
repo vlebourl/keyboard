@@ -67,7 +67,7 @@ class PygameMP3Player:
             self.player.music.play()
 
             while self.player.music.get_busy():
-                time.sleep(0.01)
+                time.sleep(0.001)
 
     def open_mp3_string_and_play(self, text, mp3_data=None):
         mp3_data = self.generated_words.get(text, None)
