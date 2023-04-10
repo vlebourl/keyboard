@@ -1,8 +1,8 @@
 import contextlib
 import io
 import logging
-import os
 import pickle
+import pygame
 import socket
 import subprocess
 import sys
@@ -10,10 +10,8 @@ import tempfile
 import termios
 import threading
 import time
-import wave
 from concurrent.futures import ThreadPoolExecutor
 
-import simpleaudio as sa
 from gtts import gTTS
 
 logging.basicConfig(
@@ -37,15 +35,6 @@ def preload_sounds_parallel(keyboard, letters):
     with ThreadPoolExecutor() as executor:
         executor.map(keyboard.player.preload_sound, letters)
 
-def wave_obj_from_wav_bytes(wav_bytes):
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-        f.write(wav_bytes)
-        f.flush()
-
-    with wave.open(f.name, 'rb') as wave_file:
-        wave_obj = sa.WaveObject.from_wave_read(wave_file)
-    os.remove(f.name)
-    return wave_obj
 
 class PicoTTS:
     """
@@ -141,14 +130,14 @@ class TTS:
         return self.tts.generate(text)
 
 
-class WavePlayer:
+class PygameWavePlayer:
     """
-    Class responsible for playing and managing the WAV data.
+    Class responsible for playing and managing the WAV data using pygame.mixer.
     """
 
     def __init__(self, tts, internet=False):
         """
-        Initialize WavePlayer with the given TTS system and settings.
+        Initialize PygameWavePlayer with the given TTS system and settings.
 
         :param tts: An instance of TTS class
         :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
@@ -157,6 +146,8 @@ class WavePlayer:
         self._internet = internet
         self.generated_words = {}
         self.word_count = {}
+
+        pygame.mixer.init()
 
         if internet:
             self.load_common_words()
@@ -168,8 +159,8 @@ class WavePlayer:
         :param text: The text to be preloaded
         """
         wav = self.tts.generate(text)
-        wave_obj = wave_obj_from_wav_bytes(wav)
-        self.generated_words[text] = wave_obj
+        sound = pygame.mixer.Sound(io.BytesIO(wav))
+        self.generated_words[text] = sound
 
     def open_wave_string_and_play(self, text, wave_string=None):
         """
@@ -179,17 +170,17 @@ class WavePlayer:
         :param wave_string: Optional WAV data as bytes, if available
         """
         if text in self.generated_words:
-            wave_obj = self.generated_words[text]
+            sound = self.generated_words[text]
         else:
             if wave_string is None:
                 wave_string = self.tts.generate(text)
-            wave_obj = wave_obj_from_wav_bytes(wave_string)
-            self.generated_words[text] = wave_obj
-        wave_obj.play()
+            sound = pygame.mixer.Sound(io.BytesIO(wave_string))
+            self.generated_words[text] = sound
+        sound.play()
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
         if self.word_count[text] >= 2:
-            self.generated_words[text] = wave_obj
+            self.generated_words[text] = sound
 
     def load_common_words(self):
         """
@@ -216,7 +207,6 @@ class WavePlayer:
             time.sleep(interval)
             self.save_common_words()
 
-
 class Keyboard:
     """
     Class responsible for handling user input and playing corresponding sounds.
@@ -229,7 +219,7 @@ class Keyboard:
         :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
         """
         self.tts = TTS(internet)
-        self.player = WavePlayer(self.tts, internet)
+        self.player = PygameWavePlayer(self.tts, internet)
         self.word = ""
 
     def get_one_letter(self):
@@ -296,9 +286,7 @@ if __name__ == "__main__":
     common_letters = "abcdefghijklmnopqrstuvwxyz1234567890"
     for letter in common_letters:
         if f" {letter} " not in keyboard.player.generated_words:
-            wav = keyboard.tts.generate(f" {letter} ")
-            wave_obj = wave_obj_from_wav_bytes(wav)
-            keyboard.player.generated_words[f" {letter} "] = wave_obj
+            keyboard.player.preload_sound(f" {letter} ")
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
 
