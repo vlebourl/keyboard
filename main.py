@@ -195,7 +195,9 @@ class PygameWavePlayer:
         """
         Load common words from the pickle file, if available.
         """
-        with contextlib.suppress(FileNotFoundError):
+        # suppress FileNotFoundError if the pickle file does not exist
+        # suppress EOFError if the pickle file is empty
+        with contextlib.suppress(FileNotFoundError, EOFError):
             with open(COMMON_WORDS_FILE, "rb") as f:
                 self.generated_words = pickle.load(f)
 
