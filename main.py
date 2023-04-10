@@ -19,15 +19,36 @@ COMMON_WORDS_FILE = "common_words.pickle"
 
 
 def preload_sounds_parallel(keyboard, letters):
+    """
+    Preload sounds for given letters using multiple threads.
+
+    :param keyboard: Keyboard object
+    :param letters: List of letters for which sounds will be preloaded
+    """
     with ThreadPoolExecutor() as executor:
         executor.map(keyboard.player.preload_sound, letters)
 
 
 class PicoTTS:
+    """
+    Wrapper around Pico TTS system.
+    """
+
     def __init__(self, voice="en-US"):
+        """
+        Initialize PicoTTS with a voice.
+
+        :param voice: A string representing the voice language (default: "en-US")
+        """
         self._voice = voice
 
     def generate(self, txt):
+        """
+        Generate WAV data for the given text using Pico TTS.
+
+        :param txt: The text to be converted to speech
+        :return: The WAV data as bytes
+        """
         with tempfile.NamedTemporaryFile(suffix=".wav") as f:
             args = ["pico2wave", "-l", self._voice, "-w", f.name, txt]
             subprocess.run(args, check=True)
@@ -36,17 +57,42 @@ class PicoTTS:
         return wav
 
     def set_voice(self, v):
+        """
+        Set the voice language for Pico TTS.
+
+        :param v: A string representing the voice language
+        """
         self._voice = v
 
 
 class GoogleTTS:
+    """
+    Wrapper around Google Text-to-Speech API.
+    """
+
     def __init__(self, language="fr"):
+        """
+        Initialize GoogleTTS with a language.
+
+        :param language: A string representing the language (default: "fr")
+        """
         self._language = language[:2]
 
     def set_voice(self, language):
+        """
+        Set the voice language for Google TTS.
+
+        :param language: A string representing the voice language
+        """
         self._language = language[:2]
 
     def generate(self, text):
+        """
+        Generate WAV data for the given text using Google TTS API.
+
+        :param text: The text to be converted to speech
+        :return: The WAV data as bytes
+        """
         tts = gTTS(text=text, lang=self._language)
         file = io.BytesIO()
         tts.write_to_fp(file)
@@ -54,15 +100,41 @@ class GoogleTTS:
 
 
 class TTS:
+    """
+    Text-to-Speech class that supports both PicoTTS and GoogleTTS.
+    """
+
     def __init__(self, internet=False, language="fr-FR"):
+        """
+        Initialize TTS with the given settings.
+
+        :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
+        :param language: A string representing the language (default: "fr-FR")
+        """
         self.tts = GoogleTTS(language) if internet else PicoTTS(language)
 
     def generate(self, text):
+        """
+        Generate WAV data for the given text using the selected TTS system.
+
+        :param text: The text to be converted to speech
+                :return: The WAV data as bytes
+        """
         return self.tts.generate(text)
 
 
 class WavePlayer:
+    """
+    Class responsible for playing and managing the WAV data.
+    """
+
     def __init__(self, tts, internet=False):
+        """
+        Initialize WavePlayer with the given TTS system and settings.
+
+        :param tts: An instance of TTS class
+        :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
+        """
         self.tts = tts
         self._internet = internet
         self.generated_words = {}
@@ -72,11 +144,22 @@ class WavePlayer:
             self.load_common_words()
 
     def preload_sound(self, text):
+        """
+        Preload sound for the given text.
+
+        :param text: The text to be preloaded
+        """
         wav = self.tts.generate(text)
         wave_obj = sa.WaveObject.from_wave_file(io.BytesIO(wav))
         self.generated_words[text] = wave_obj
 
     def open_wave_string_and_play(self, text, wave_string=None):
+        """
+        Play the sound associated with the given text.
+
+        :param text: The text whose sound will be played
+        :param wave_string: Optional WAV data as bytes, if available
+        """
         if text in self.generated_words:
             wave_obj = self.generated_words[text]
         else:
@@ -91,27 +174,52 @@ class WavePlayer:
             self.generated_words[text] = wave_obj
 
     def load_common_words(self):
+        """
+        Load common words from the pickle file, if available.
+        """
         with contextlib.suppress(FileNotFoundError):
             with open(COMMON_WORDS_FILE, "rb") as f:
                 self.generated_words = pickle.load(f)
 
     def save_common_words(self):
+        """
+        Save common words to the pickle file.
+        """
         with open(COMMON_WORDS_FILE, "wb") as f:
             pickle.dump(self.generated_words, f)
 
     def periodic_save(self, interval):
+        """
+        Periodically save common words to the pickle file.
+
+        :param interval: Time interval in seconds between saves
+        """
         while True:
             time.sleep(interval)
             self.save_common_words()
 
 
 class Keyboard:
+    """
+    Class responsible for handling user input and playing corresponding sounds.
+    """
+
     def __init__(self, internet=False):
+        """
+        Initialize Keyboard with the given settings.
+
+        :param internet: If True, use GoogleTTS, otherwise use PicoTTS (default: False)
+        """
         self.tts = TTS(internet)
         self.player = WavePlayer(self.tts, internet)
         self.word = ""
 
     def get_one_letter(self):
+        """
+        Get one letter of user input.
+
+        :return: A string containing one letter
+        """
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
         try:
@@ -124,6 +232,11 @@ class Keyboard:
         return ch
 
     def process_letter(self, letter: str) -> None:
+        """
+        Process one letter of user input and play the corresponding sound.
+
+        :param letter: A string containing one letter
+        """
         if letter in {"\n", " ", "\r"}:
             if self.word:
                 self.player.open_wave_string_and_play(
@@ -137,6 +250,9 @@ class Keyboard:
         self.player.open_wave_string_and_play(f" {letter} ")
 
     def loop(self):
+        """
+        Start the main loop to process user input and play sounds.
+        """
         letter = self.get_one_letter()
         while True:
             self.process_letter(letter)
