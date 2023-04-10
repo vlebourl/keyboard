@@ -1,5 +1,6 @@
 import contextlib
 import io
+import logging
 import pickle
 import socket
 import subprocess
@@ -12,6 +13,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 import simpleaudio as sa
 from gtts import gTTS
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
 VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
@@ -239,6 +246,7 @@ class Keyboard:
         """
         if letter in {"\n", " ", "\r"}:
             if self.word:
+                logging.info("playing word: %s", self.word)
                 self.player.open_wave_string_and_play(
                     self.word
                 )  # Pass the word without the wave_string
@@ -260,11 +268,16 @@ class Keyboard:
 
 
 if __name__ == "__main__":
+    logging.info("Starting talking keyboard")
+
     internet = False
     with contextlib.suppress(Exception):
         host = socket.gethostbyname("www.google.com")
         socket.create_connection((host, 80), 2)
         internet = True
+
+    logging.info(f"Internet status: {internet}")
+
 
     keyboard = Keyboard(internet)
 
@@ -285,5 +298,7 @@ if __name__ == "__main__":
         target=keyboard.player.periodic_save, args=(300,), daemon=True
     )
     save_thread.start()
+
+    logging.info("Entering main loop")
 
     keyboard.loop()
