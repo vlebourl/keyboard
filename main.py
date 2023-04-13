@@ -23,8 +23,8 @@ VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
-KEY_MAP= {
-    'KEY_A': 'a',
+KEY_MAP = {
+    'KEY_A': 'q',
     'KEY_B': 'b',
     'KEY_C': 'c',
     'KEY_D': 'd',
@@ -36,20 +36,19 @@ KEY_MAP= {
     'KEY_J': 'j',
     'KEY_K': 'k',
     'KEY_L': 'l',
-    'KEY_M': 'm',
     'KEY_N': 'n',
     'KEY_O': 'o',
     'KEY_P': 'p',
-    'KEY_Q': 'q',
+    'KEY_Q': 'a',
     'KEY_R': 'r',
     'KEY_S': 's',
     'KEY_T': 't',
     'KEY_U': 'u',
     'KEY_V': 'v',
-    'KEY_W': 'w',
+    'KEY_W': 'z',
     'KEY_X': 'x',
     'KEY_Y': 'y',
-    'KEY_Z': 'z',
+    'KEY_Z': 'w',
     'KEY_0': '0',
     'KEY_1': '1',
     'KEY_2': '2',
@@ -60,25 +59,24 @@ KEY_MAP= {
     'KEY_7': '7',
     'KEY_8': '8',
     'KEY_9': '9',
+    'KEY_SEMICOLON': 'm',
     'KEY_SPACE': ' ',
     'KEY_ENTER': '\n',
-    'KEY_BACKSPACE': '\b', #ignore the key
-    'KEY_TAB': '\t', #ignore this key
-    'KEY_KP_ENTER': '\n',
-    'KEY_KP_0': '0',
-    'KEY_KP_1': '1',
-    'KEY_KP_2': '2',
-    'KEY_KP_3': '3',
-    'KEY_KP_4': '4',
-    'KEY_KP_5': '5',
-    'KEY_KP_6': '6',
-    'KEY_KP_7': '7',
-    'KEY_KP_8': '8',
-    'KEY_KP_9': '9',
-    'KEY_LEFTSHIFT': 'SHIFT',
-    'KEY_RIGHTSHIFT': 'SHIFT',
-    'KEY_CAPSLOCK': 'CAPSLOCK',
-}    # Add other keys as needed
+    'KEY_BACKSPACE': '\b',
+    'KEY_TAB': '\t',
+    'KEY_KPENTER': '\n',
+    'KEY_KP0': '0',
+    'KEY_KP1': '1',
+    'KEY_KP2': '2',
+    'KEY_KP3': '3',
+    'KEY_KP4': '4',
+    'KEY_KP5': '5',
+    'KEY_KP6': '6',
+    'KEY_KP7': '7',
+    'KEY_KP8': '8',
+    'KEY_KP9': '9',
+    # Add other keys as needed
+}
 
 MP3_DIR = "sounds"
 if not os.path.exists(MP3_DIR):
