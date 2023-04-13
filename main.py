@@ -22,11 +22,6 @@ VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
-
-MP3_DIR = "sounds"
-if not os.path.exists(MP3_DIR):
-    os.makedirs(MP3_DIR)
-    
 KEY_MAP= {
     'KEY_A': 'a',
     'KEY_B': 'b',
@@ -81,6 +76,10 @@ KEY_MAP= {
     'KEY_KP_9': '9',
     # Add other keys as needed
 }
+
+MP3_DIR = "sounds"
+if not os.path.exists(MP3_DIR):
+    os.makedirs(MP3_DIR)
 
 def preload_sounds_parallel(_keyboard, _letters):
     with ThreadPoolExecutor() as executor:
