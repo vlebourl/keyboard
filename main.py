@@ -8,6 +8,7 @@ import termios
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from evdev import InputDevice, categorize, ecodes
 
 import pygame
 from gtts import gTTS
@@ -22,6 +23,60 @@ VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
 COMMON_WORDS_FILE = "common_words.json"
 
+KEY_MAP= {
+    'KEY_A': 'a',
+    'KEY_B': 'b',
+    'KEY_C': 'c',
+    'KEY_D': 'd',
+    'KEY_E': 'e',
+    'KEY_F': 'f',
+    'KEY_G': 'g',
+    'KEY_H': 'h',
+    'KEY_I': 'i',
+    'KEY_J': 'j',
+    'KEY_K': 'k',
+    'KEY_L': 'l',
+    'KEY_M': 'm',
+    'KEY_N': 'n',
+    'KEY_O': 'o',
+    'KEY_P': 'p',
+    'KEY_Q': 'q',
+    'KEY_R': 'r',
+    'KEY_S': 's',
+    'KEY_T': 't',
+    'KEY_U': 'u',
+    'KEY_V': 'v',
+    'KEY_W': 'w',
+    'KEY_X': 'x',
+    'KEY_Y': 'y',
+    'KEY_Z': 'z',
+    'KEY_0': '0',
+    'KEY_1': '1',
+    'KEY_2': '2',
+    'KEY_3': '3',
+    'KEY_4': "4",
+    'KEY_5': '5',
+    'KEY_6': '6',
+    'KEY_7': '7',
+    'KEY_8': '8',
+    'KEY_9': '9',
+    'KEY_SPACE': ' ',
+    'KEY_ENTER': '\n',
+    'KEY_BACKSPACE': '\b',
+    'KEY_TAB': '\t',
+    'KEY_KP_ENTER': '\n',
+    'KEY_KP_0': '0',
+    'KEY_KP_1': '1',
+    'KEY_KP_2': '2',
+    'KEY_KP_3': '3',
+    'KEY_KP_4': '4',
+    'KEY_KP_5': '5',
+    'KEY_KP_6': '6',
+    'KEY_KP_7': '7',
+    'KEY_KP_8': '8',
+    'KEY_KP_9': '9',
+    # Add other keys as needed
+}
 
 def preload_sounds_parallel(keyboard, letters):
     with ThreadPoolExecutor() as executor:
@@ -100,22 +155,21 @@ class PygameMP3Player:
 
 
 class Keyboard:
-    def __init__(self):
+    def __init__(self, device_path="/dev/input/by-id/usb-Logitech_USB_Receiver-if02-event-kbd"):
+        self.device = InputDevice(device_path)
+        self.key_map = self.create_key_map()
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
 
     def get_one_letter(self):
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            new_settings = termios.tcgetattr(fd)
-            new_settings[3] = new_settings[3] & ~termios.ICANON & ~termios.ECHO
-            termios.tcsetattr(fd, termios.TCSAFLUSH, new_settings)
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
+        for event in self.device.read_loop():
+            if event.type == ecodes.EV_KEY:
+                key_event = categorize(event)
+                if key_event.keystate == key_event.key_up:
+                    keycode = key_event.keycode
+                    logging.info(f"received: {keycode}")
+                    return self.key_map.get(keycode,"")
 
     def process_letter(self, letter: str) -> None:
         if letter in {"\n", " ", "\r"}:
