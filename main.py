@@ -4,9 +4,10 @@ import io
 import json
 import logging
 import os
-import tempfile
 import threading
 import time
+import alsaaudio
+
 from concurrent.futures import ThreadPoolExecutor
 from evdev import InputDevice, categorize, ecodes
 
@@ -191,6 +192,7 @@ class Keyboard:
         if device_path is None:
             device_path = find_keyboard_device_path()
         self.device = InputDevice(device_path)
+        self.mixer = alsaaudio.Mixer()
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
@@ -209,12 +211,19 @@ class Keyboard:
                 key_event = categorize(event)
                 self.update_key_states(key_event)
                 if key_event.keystate == key_event.key_up:
-                    if mapped_key := KEY_MAP.get(key_event.keycode, ""):
-                        if mapped_key.isalpha() and (self.shift_pressed != self.caps_lock):
-                            mapped_key = mapped_key.upper()
-                        return mapped_key
-                    else:
-                        logging.warning("Unsupported key: %s", key_event.keycode)
+                    try:
+                        if mapped_key := KEY_MAP.get(key_event.keycode, ""):
+                            if mapped_key.isalpha() and (self.shift_pressed != self.caps_lock):
+                                mapped_key = mapped_key.upper()
+                            return mapped_key
+                        elif key_event.keycode == 'KEY_VOLUMEUP':
+                            self.mixer.setvolume(min(self.mixer.getvolume()[0] + 5, 100))
+                        elif key_event.keycode == 'KEY_VOLUMEDOWN':
+                            self.mixer.setvolume(min(self.mixer.getvolume()[0] - 5, 100))
+                        else:
+                            logging.warning("Unsupported key: %s", key_event.keycode)
+                    except TypeError as e:
+                        logging.error("Error processing key: %s", str(key_event.keycode))
 
 
     def process_letter(self, _letter: str) -> None:
