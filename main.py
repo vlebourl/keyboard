@@ -1,4 +1,5 @@
 import contextlib
+import glob
 import io
 import json
 import logging
@@ -61,8 +62,8 @@ KEY_MAP= {
     'KEY_9': '9',
     'KEY_SPACE': ' ',
     'KEY_ENTER': '\n',
-    'KEY_BACKSPACE': '\b',
-    'KEY_TAB': '\t',
+    'KEY_BACKSPACE': '\b', #ignore the key
+    'KEY_TAB': '\t', #ignore this key
     'KEY_KP_ENTER': '\n',
     'KEY_KP_0': '0',
     'KEY_KP_1': '1',
@@ -74,12 +75,30 @@ KEY_MAP= {
     'KEY_KP_7': '7',
     'KEY_KP_8': '8',
     'KEY_KP_9': '9',
-    # Add other keys as needed
-}
+    'KEY_LEFTSHIFT': 'SHIFT',
+    'KEY_RIGHTSHIFT': 'SHIFT',
+    'KEY_CAPSLOCK': 'CAPSLOCK',
+}    # Add other keys as needed
 
 MP3_DIR = "sounds"
 if not os.path.exists(MP3_DIR):
     os.makedirs(MP3_DIR)
+
+def find_keyboard_device_path():
+    device_paths = glob.glob("/dev/input/by-id/*kbd*")
+    if not device_paths:
+        device_paths = glob.glob("/dev/input/by-id/*keyboard*")
+    if not device_paths:
+        raise ValueError("No keyboard device found!")        
+
+    if len(device_paths) == 1:
+        return device_paths[0]
+    logging.warn("Multiple keyboard devices found:")
+    for i, device_path in enumerate(device_paths, start=0):
+        logging.warn("[%d]: %s", i, device_path)
+    logging.warn("Using [0]: %s", device_paths[0])
+    selected_device = int(input("Enter the number of the desired device: "))
+    return device_paths[0]
 
 def preload_sounds_parallel(_keyboard, _letters):
     with ThreadPoolExecutor() as executor:
@@ -93,11 +112,21 @@ class GoogleTTS:
     def set_voice(self, language):
         self._language = language[:2]
 
-    def generate(self, text):
-        tts = gTTS(text=text, lang=self._language)
-        file = io.BytesIO()
-        tts.write_to_fp(file)
-        return file.getvalue()
+    def generate(self, text, retries=3):
+        for i in range(retries):
+            try:
+                tts = gTTS(text=text, lang=self._language)
+                file = io.BytesIO()
+                tts.write_to_fp(file)
+                return file.getvalue()
+            except (requests.exceptions.RequestException, Exception) as e:
+                logging.error("Error generating TTS for text '%s': %s", text, e)
+                if i < retries - 1:
+                    logging.info("Retrying (%d/%d)...", i + 1, retries)
+                else:
+                    logging.error("Failed to generate TTS for text '%s' after %d retries", text, retries)
+                    return None
+        return None
 
 
 class PygameMP3Player:
@@ -160,21 +189,35 @@ class PygameMP3Player:
 
 
 class Keyboard:
-    def __init__(self, device_path="/dev/input/by-id/usb-Logitech_USB_Receiver-if02-event-kbd"):
+    def __init__(self, device_path=None):
+        if device_path is None:
+            device_path = find_keyboard_device_path()
         self.device = InputDevice(device_path)
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
+        self.shift_pressed = False
+        self.caps_lock = False
+
+    def update_key_states(self, key_event):
+        if key_event.keycode in ['KEY_LEFTSHIFT', 'KEY_RIGHTSHIFT']:
+            self.shift_pressed = key_event.keystate == key_event.key_down
+        elif key_event.keycode == 'KEY_CAPSLOCK' and key_event.keystate == key_event.key_down:
+            self.caps_lock = not self.caps_lock
 
     def get_one_letter(self):
         for event in self.device.read_loop():
             if event.type == ecodes.EV_KEY:
                 key_event = categorize(event)
+                self.update_key_states(key_event)
                 if key_event.keystate == key_event.key_up:
-                    mapped_key = KEY_MAP.get(key_event.keycode, "")
-                    if not mapped_key:
+                    if mapped_key := KEY_MAP.get(key_event.keycode, ""):
+                        if mapped_key.isalpha() and (self.shift_pressed != self.caps_lock):
+                            mapped_key = mapped_key.upper()
+                        return mapped_key
+                    else:
                         logging.warning("Unsupported key: %s", key_event.keycode)
-                    return mapped_key
+
 
     def process_letter(self, _letter: str) -> None:
         if _letter in {"\n", " ", "\r"}:
