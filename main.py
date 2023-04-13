@@ -158,7 +158,7 @@ class PygameMP3Player:
         filename = self.generated_words.get(text, None)
         if filename is None:
             mp3_data = self.tts.generate(text)
-            filename = f"{text}.mp3"
+            filename = os.path.join(MP3_DIR, f"{text}.mp3")
             with open(filename, "wb") as f:
                 f.write(mp3_data)
             self.generated_words[text] = filename
