@@ -212,7 +212,7 @@ class Keyboard:
                 self.update_key_states(key_event)
                 if key_event.keystate == key_event.key_up:
                     try:
-                        if mapped_key := KEY_MAP.get(key_event.keycode, ""):
+                        if mapped_key := KEY_MAP.get(key_event.keycode[0] if isinstance(key_event.keycode, list) else key_event.keycode, ""):
                             if mapped_key.isalpha() and (self.shift_pressed != self.caps_lock):
                                 mapped_key = mapped_key.upper()
                             return mapped_key
