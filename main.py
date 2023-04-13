@@ -2,6 +2,7 @@ import contextlib
 import io
 import json
 import logging
+import os
 import tempfile
 import threading
 import time
@@ -22,6 +23,10 @@ VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 
+MP3_DIR = "sounds"
+if not os.path.exists(MP3_DIR):
+    os.makedirs(MP3_DIR)
+    
 KEY_MAP= {
     'KEY_A': 'a',
     'KEY_B': 'b',
@@ -109,43 +114,45 @@ class PygameMP3Player:
         self.player.init()
 
     def preload_sound(self, text):
-        mp3_data = self.tts.generate(text)
-        self.generated_words[text] = mp3_data
-
-    def play_mp3_data(self, mp3_data):
-        with tempfile.NamedTemporaryFile(delete=True) as f:
-            f.write(mp3_data)
-            f.flush()
-
-            self.player.music.load(f.name)
-            self.player.music.play()
-
-            while self.player.music.get_busy():
-                time.sleep(0.001)
-
-    def open_mp3_string_and_play(self, text, mp3_data=None):
-        mp3_data = self.generated_words.get(text, None)
-        if mp3_data is None:
+        filename = os.path.join(MP3_DIR, f"{text}.mp3")
+        if not os.path.isfile(filename):
             mp3_data = self.tts.generate(text)
+            with open(filename, "wb") as f:
+                f.write(mp3_data)
+        self.generated_words[text] = filename
 
-        self.play_mp3_data(mp3_data)
+    def play_mp3_file(self, filename):
+        self.player.music.load(filename)
+        self.player.music.play()
+
+        while self.player.music.get_busy():
+            time.sleep(0.001)
+
+    def open_mp3_string_and_play(self, text):
+        filename = self.generated_words.get(text, None)
+        if filename is None:
+            mp3_data = self.tts.generate(text)
+            filename = f"{text}.mp3"
+            with open(filename, "wb") as f:
+                f.write(mp3_data)
+            self.generated_words[text] = filename
+
+        self.play_mp3_file(filename)
 
         self.word_count[text] = self.word_count.get(text, 0) + 1
         if self.word_count[text] > 2:
-            self.generated_words[text] = mp3_data
+            self.generated_words[text] = filename
 
     def load_common_words(self):
         # suppress FileNotFoundError and json.decoder.JSONDecodeError
         with contextlib.suppress(FileNotFoundError, json.decoder.JSONDecodeError):
             with open(COMMON_WORDS_FILE, "r", encoding="utf-8") as f:
-                self.generated_words = {
-                    k: bytes.fromhex(v) for k, v in json.load(f).items()
-                }
+                self.generated_words = json.load(f)
 
     def save_common_words(self):
         with open(COMMON_WORDS_FILE, "w", encoding="utf-8") as f:
             logging.info("Saving %d words", len(self.generated_words))
-            json.dump({k: v.hex() for k, v in self.generated_words.items()}, f)
+            json.dump(self.generated_words, f)
 
     def periodic_save(self, interval):
         while True:
@@ -165,9 +172,10 @@ class Keyboard:
             if event.type == ecodes.EV_KEY:
                 key_event = categorize(event)
                 if key_event.keystate == key_event.key_up:
-                    keycode = key_event.keycode
-                    logging.info("received: %s", keycode)
-                    return KEY_MAP.get(keycode,"")
+                    mapped_key = KEY_MAP.get(key_event.keycode, "")
+                    if not mapped_key:
+                        logging.warning("Unsupported key: %s", key_event.keycode)
+                    return mapped_key
 
     def process_letter(self, _letter: str) -> None:
         if _letter in {"\n", " ", "\r"}:
