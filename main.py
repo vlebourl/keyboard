@@ -193,6 +193,7 @@ class Keyboard:
             device_path = find_keyboard_device_path()
         self.device = InputDevice(device_path)
         self.mixer = alsaaudio.Mixer()
+        self.volume = self.mixer.getvolume()[0]
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
@@ -220,6 +221,12 @@ class Keyboard:
                             self.mixer.setvolume(min(self.mixer.getvolume()[0] + 5, 100))
                         elif key_event.keycode == 'KEY_VOLUMEDOWN':
                             self.mixer.setvolume(min(self.mixer.getvolume()[0] - 5, 100))
+                        elif key_event.keycode == 'KEY_MIN_INTERESTING':
+                            if self.mixer.getvolume()[0] > 0:
+                                self.volume = self.mixer.getvolume()[0]
+                                self.mixer.setvolume(0)
+                            else:
+                                self.mixer.setvolume(self.volume)
                         else:
                             logging.warning("Unsupported key: %s", key_event.keycode)
                     except TypeError as e:
