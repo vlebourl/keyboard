@@ -2,9 +2,7 @@ import contextlib
 import io
 import json
 import logging
-import sys
 import tempfile
-import termios
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -22,6 +20,7 @@ logging.basicConfig(
 VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
 COMMON_WORDS_FILE = "common_words.json"
+COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 
 KEY_MAP= {
     'KEY_A': 'a',
@@ -78,9 +77,9 @@ KEY_MAP= {
     # Add other keys as needed
 }
 
-def preload_sounds_parallel(keyboard, letters):
+def preload_sounds_parallel(_keyboard, _letters):
     with ThreadPoolExecutor() as executor:
-        executor.map(keyboard.player.preload_sound, letters)
+        executor.map(_keyboard.player.preload_sound, _letters)
 
 
 class GoogleTTS:
@@ -138,13 +137,13 @@ class PygameMP3Player:
     def load_common_words(self):
         # suppress FileNotFoundError and json.decoder.JSONDecodeError
         with contextlib.suppress(FileNotFoundError, json.decoder.JSONDecodeError):
-            with open(COMMON_WORDS_FILE, "r") as f:
+            with open(COMMON_WORDS_FILE, "r", encoding="utf-8") as f:
                 self.generated_words = {
                     k: bytes.fromhex(v) for k, v in json.load(f).items()
                 }
 
     def save_common_words(self):
-        with open(COMMON_WORDS_FILE, "w") as f:
+        with open(COMMON_WORDS_FILE, "w", encoding="utf-8") as f:
             logging.info("Saving %d words", len(self.generated_words))
             json.dump({k: v.hex() for k, v in self.generated_words.items()}, f)
 
@@ -157,7 +156,6 @@ class PygameMP3Player:
 class Keyboard:
     def __init__(self, device_path="/dev/input/by-id/usb-Logitech_USB_Receiver-if02-event-kbd"):
         self.device = InputDevice(device_path)
-        self.key_map = self.create_key_map()
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
@@ -168,26 +166,26 @@ class Keyboard:
                 key_event = categorize(event)
                 if key_event.keystate == key_event.key_up:
                     keycode = key_event.keycode
-                    logging.info(f"received: {keycode}")
-                    return self.key_map.get(keycode,"")
+                    logging.info("received: %s", keycode)
+                    return KEY_MAP.get(keycode,"")
 
-    def process_letter(self, letter: str) -> None:
-        if letter in {"\n", " ", "\r"}:
+    def process_letter(self, _letter: str) -> None:
+        if _letter in {"\n", " ", "\r"}:
             if self.word:
                 logging.info("playing word: %s", self.word)
                 self.player.open_mp3_string_and_play(self.word)
                 self.word = ""
             return
-        if not letter.isalnum():
+        if not _letter.isalnum():
             return
-        self.word += letter
-        self.player.open_mp3_string_and_play(f" {letter} ")
+        self.word += _letter
+        self.player.open_mp3_string_and_play(f" {_letter} ")
 
     def loop(self):
-        letter = self.get_one_letter()
+        _letter = self.get_one_letter()
         while True:
-            self.process_letter(letter)
-            letter = self.get_one_letter()
+            self.process_letter(_letter)
+            _letter = self.get_one_letter()
 
 
 if __name__ == "__main__":
@@ -195,9 +193,8 @@ if __name__ == "__main__":
 
     keyboard = Keyboard()
 
-    common_letters = "abcdefghijklmnopqrstuvwxyz1234567890"
     logging.info("Preloading common letters")
-    for letter in common_letters:
+    for letter in COMMON_LETTERS:
         if f" {letter} " not in keyboard.player.generated_words:
             logging.info("    Preloading letter: %s", letter)
             keyboard.player.preload_sound(f" {letter} ")
