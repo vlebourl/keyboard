@@ -192,13 +192,18 @@ class Keyboard:
         if device_path is None:
             device_path = find_keyboard_device_path()
         self.device = InputDevice(device_path)
-        self.mixer = alsaaudio.Mixer()
+        self.mixer = alsaaudio.Mixer("PCM", cardindex=1)
         self.volume = self.mixer.getvolume()[0]
+        self.mixer.setvolume(90)
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
         self.shift_pressed = False
         self.caps_lock = False
+
+    def set_volume(self,vol):
+        self.mixer.setvolume(vol)
+        logger.info("Volume set to %d",vol)
 
     def update_key_states(self, key_event):
         if key_event.keycode in ['KEY_LEFTSHIFT', 'KEY_RIGHTSHIFT']:
@@ -218,15 +223,15 @@ class Keyboard:
                                 mapped_key = mapped_key.upper()
                             return mapped_key
                         elif key_event.keycode == 'KEY_VOLUMEUP':
-                            self.mixer.setvolume(min(self.mixer.getvolume()[0] + 5, 100))
+                            self.set_volume(min(self.mixer.getvolume()[0] + 5, 100))
                         elif key_event.keycode == 'KEY_VOLUMEDOWN':
-                            self.mixer.setvolume(min(self.mixer.getvolume()[0] - 5, 100))
-                        elif key_event.keycode == 'KEY_MIN_INTERESTING':
+                            self.set_volume(min(self.mixer.getvolume()[0] - 5, 100))
+                        elif isinstance(key_event.keycode, list) and key_event.keycode[0] == 'KEY_MIN_INTERESTING':
                             if self.mixer.getvolume()[0] > 0:
                                 self.volume = self.mixer.getvolume()[0]
-                                self.mixer.setvolume(0)
+                                self.set_volume(0)
                             else:
-                                self.mixer.setvolume(self.volume)
+                                self.set_volume(self.volume)
                         else:
                             logging.warning("Unsupported key: %s", key_event.keycode)
                     except TypeError as e:
@@ -248,8 +253,11 @@ class Keyboard:
     def loop(self):
         _letter = self.get_one_letter()
         while True:
-            self.process_letter(_letter)
-            _letter = self.get_one_letter()
+            try:
+                self.process_letter(_letter)
+                _letter = self.get_one_letter()
+            except Exception as e:
+                logger.error("Critical Exception: %s", e)
 
 
 if __name__ == "__main__":
