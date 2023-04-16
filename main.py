@@ -203,7 +203,7 @@ class Keyboard:
 
     def set_volume(self,vol):
         self.mixer.setvolume(vol)
-        logger.info("Volume set to %d",vol)
+        logging.info("Volume set to %d",vol)
 
     def update_key_states(self, key_event):
         if key_event.keycode in ['KEY_LEFTSHIFT', 'KEY_RIGHTSHIFT']:
@@ -257,7 +257,7 @@ class Keyboard:
                 self.process_letter(_letter)
                 _letter = self.get_one_letter()
             except Exception as e:
-                logger.error("Critical Exception: %s", e)
+                logging.error("Critical Exception: %s", e)
 
 
 if __name__ == "__main__":
