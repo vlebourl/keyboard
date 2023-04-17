@@ -385,7 +385,7 @@ class Keyboard:
             return
         if not _letter.isalnum():
             return
-        
+
         light_up(COLOR_MAP[_letter])
 
         self.word += _letter
