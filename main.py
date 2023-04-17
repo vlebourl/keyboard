@@ -50,12 +50,12 @@ numeric_level = getattr(logging, args.loglevel.upper(), None)
 if not isinstance(numeric_level, int):
     raise ValueError(f"Invalid log level: {args.loglevel}")
 
-
 logging.basicConfig(
     level=numeric_level,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
+logging.info("Starting up with log level %d", numeric_level)
 
 VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 
