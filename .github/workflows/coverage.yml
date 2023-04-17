@@ -23,7 +23,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        coverage run -m unittest test_main.py
+        coverage run -m unittest discover -s . -p '*_test.py'
 
     - name: Report coverage
       run: |
