@@ -192,9 +192,6 @@ def running_leds(color=GREEN, delay=0.5, stop_event=None):
             light_led_i(i, OFF, delay)
 
 
-# TODO Rename this here and in `running_led`
-
-
 def find_keyboard_device_path():
     device_paths = glob.glob("/dev/input/by-id/*kbd*")
     if not device_paths:
@@ -216,6 +213,15 @@ def preload_sounds_parallel(_keyboard, _letters):
     with ThreadPoolExecutor() as executor:
         executor.map(_keyboard.player.preload_sound, _letters)
 
+
+class LEDStripContext:
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        if led_strip:
+            light_up(OFF)
+            strip.show()
 
 class GoogleTTS:
     def __init__(self, language="fr"):
@@ -398,36 +404,37 @@ class Keyboard:
 
 
 if __name__ == "__main__":
-    flash(WHITE, do_stop=False)
-    logging.info("Starting talking keyboard")
-    green_thread = threading.Thread(
-        target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
-    )
-    green_thread.start()
+    with LEDStripContext():
+        flash(WHITE, do_stop=False)
+        logging.info("Starting talking keyboard")
+        green_thread = threading.Thread(
+            target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
+        )
+        green_thread.start()
 
-    time.sleep(2)
-    
-    keyboard = Keyboard()
+        time.sleep(2)
+        
+        keyboard = Keyboard()
 
-    logging.info("Preloading common letters")
-    for letter in COMMON_LETTERS:
-        if f" {letter} " not in keyboard.player.generated_words:
-            logging.info("    Preloading letter: %s", letter)
-            keyboard.player.preload_sound(f" {letter} ")
-    keyboard.player.save_common_words()
+        logging.info("Preloading common letters")
+        for letter in COMMON_LETTERS:
+            if f" {letter} " not in keyboard.player.generated_words:
+                logging.info("    Preloading letter: %s", letter)
+                keyboard.player.preload_sound(f" {letter} ")
+        keyboard.player.save_common_words()
 
-    logging.info("Preloaded words are:")
-    for word in keyboard.player.generated_words.keys():
-        logging.info("    %s", word)
+        logging.info("Preloaded words are:")
+        for word in keyboard.player.generated_words.keys():
+            logging.info("    %s", word)
 
-    keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
-    keyboard.process_letter("\n")
+        keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
+        keyboard.process_letter("\n")
 
-    save_thread = threading.Thread(
-        target=keyboard.player.periodic_save, args=(300,), daemon=True
-    )
-    save_thread.start()
+        save_thread = threading.Thread(
+            target=keyboard.player.periodic_save, args=(300,), daemon=True
+        )
+        save_thread.start()
 
-    light_up(OFF)
-    flash(GREEN)
-    keyboard.loop()
+        light_up(OFF)
+        flash(GREEN)
+        keyboard.loop()
