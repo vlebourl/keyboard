@@ -1,21 +1,42 @@
+import argparse
 import contextlib
 import glob
 import io
 import json
 import logging
 import os
+import requests
 import threading
 import time
-import alsaaudio
-
 from concurrent.futures import ThreadPoolExecutor
-from evdev import InputDevice, categorize, ecodes
 
+import alsaaudio
 import pygame
+from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description="Talking keyboard with adjustable logging level"
+    )
+    parser.add_argument(
+        "--loglevel",
+        default="WARNING",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the logging level (default: %(default))",
+    )
+    return parser.parse_args()
+
+
+args = parse_arguments()
+numeric_level = getattr(logging, args.loglevel.upper(), None)
+if not isinstance(numeric_level, int):
+    raise ValueError(f"Invalid log level: {args.loglevel}")
+
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=numeric_level,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
@@ -25,57 +46,57 @@ VOICES = ["de-DE", "en-GB", "en-US", "es-ES", "fr-FR", "it-IT"]
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 KEY_MAP = {
-    'KEY_A': 'q',
-    'KEY_B': 'b',
-    'KEY_C': 'c',
-    'KEY_D': 'd',
-    'KEY_E': 'e',
-    'KEY_F': 'f',
-    'KEY_G': 'g',
-    'KEY_H': 'h',
-    'KEY_I': 'i',
-    'KEY_J': 'j',
-    'KEY_K': 'k',
-    'KEY_L': 'l',
-    'KEY_N': 'n',
-    'KEY_O': 'o',
-    'KEY_P': 'p',
-    'KEY_Q': 'a',
-    'KEY_R': 'r',
-    'KEY_S': 's',
-    'KEY_T': 't',
-    'KEY_U': 'u',
-    'KEY_V': 'v',
-    'KEY_W': 'z',
-    'KEY_X': 'x',
-    'KEY_Y': 'y',
-    'KEY_Z': 'w',
-    'KEY_0': '0',
-    'KEY_1': '1',
-    'KEY_2': '2',
-    'KEY_3': '3',
-    'KEY_4': "4",
-    'KEY_5': '5',
-    'KEY_6': '6',
-    'KEY_7': '7',
-    'KEY_8': '8',
-    'KEY_9': '9',
-    'KEY_SEMICOLON': 'm',
-    'KEY_SPACE': ' ',
-    'KEY_ENTER': '\n',
-    'KEY_BACKSPACE': '\b',
-    'KEY_TAB': '\t',
-    'KEY_KPENTER': '\n',
-    'KEY_KP0': '0',
-    'KEY_KP1': '1',
-    'KEY_KP2': '2',
-    'KEY_KP3': '3',
-    'KEY_KP4': '4',
-    'KEY_KP5': '5',
-    'KEY_KP6': '6',
-    'KEY_KP7': '7',
-    'KEY_KP8': '8',
-    'KEY_KP9': '9',
+    "KEY_A": "q",
+    "KEY_B": "b",
+    "KEY_C": "c",
+    "KEY_D": "d",
+    "KEY_E": "e",
+    "KEY_F": "f",
+    "KEY_G": "g",
+    "KEY_H": "h",
+    "KEY_I": "i",
+    "KEY_J": "j",
+    "KEY_K": "k",
+    "KEY_L": "l",
+    "KEY_N": "n",
+    "KEY_O": "o",
+    "KEY_P": "p",
+    "KEY_Q": "a",
+    "KEY_R": "r",
+    "KEY_S": "s",
+    "KEY_T": "t",
+    "KEY_U": "u",
+    "KEY_V": "v",
+    "KEY_W": "z",
+    "KEY_X": "x",
+    "KEY_Y": "y",
+    "KEY_Z": "w",
+    "KEY_0": "0",
+    "KEY_1": "1",
+    "KEY_2": "2",
+    "KEY_3": "3",
+    "KEY_4": "4",
+    "KEY_5": "5",
+    "KEY_6": "6",
+    "KEY_7": "7",
+    "KEY_8": "8",
+    "KEY_9": "9",
+    "KEY_SEMICOLON": "m",
+    "KEY_SPACE": " ",
+    "KEY_ENTER": "\n",
+    "KEY_BACKSPACE": "\b",
+    "KEY_TAB": "\t",
+    "KEY_KPENTER": "\n",
+    "KEY_KP0": "0",
+    "KEY_KP1": "1",
+    "KEY_KP2": "2",
+    "KEY_KP3": "3",
+    "KEY_KP4": "4",
+    "KEY_KP5": "5",
+    "KEY_KP6": "6",
+    "KEY_KP7": "7",
+    "KEY_KP8": "8",
+    "KEY_KP9": "9",
     # Add other keys as needed
 }
 
@@ -83,12 +104,13 @@ MP3_DIR = "sounds"
 if not os.path.exists(MP3_DIR):
     os.makedirs(MP3_DIR)
 
+
 def find_keyboard_device_path():
     device_paths = glob.glob("/dev/input/by-id/*kbd*")
     if not device_paths:
         device_paths = glob.glob("/dev/input/by-id/*keyboard*")
     if not device_paths:
-        raise ValueError("No keyboard device found!")        
+        raise ValueError("No keyboard device found!")
 
     if len(device_paths) == 1:
         return device_paths[0]
@@ -96,8 +118,8 @@ def find_keyboard_device_path():
     for i, device_path in enumerate(device_paths, start=0):
         logging.warn("[%d]: %s", i, device_path)
     logging.warn("Using [0]: %s", device_paths[0])
-    selected_device = int(input("Enter the number of the desired device: "))
     return device_paths[0]
+
 
 def preload_sounds_parallel(_keyboard, _letters):
     with ThreadPoolExecutor() as executor:
@@ -123,7 +145,11 @@ class GoogleTTS:
                 if i < retries - 1:
                     logging.info("Retrying (%d/%d)...", i + 1, retries)
                 else:
-                    logging.error("Failed to generate TTS for text '%s' after %d retries", text, retries)
+                    logging.error(
+                        "Failed to generate TTS for text '%s' after %d retries",
+                        text,
+                        retries,
+                    )
                     return None
         return None
 
@@ -201,14 +227,17 @@ class Keyboard:
         self.shift_pressed = False
         self.caps_lock = False
 
-    def set_volume(self,vol):
+    def set_volume(self, vol):
         self.mixer.setvolume(vol)
-        logging.info("Volume set to %d",vol)
+        logging.info("Volume set to %d", vol)
 
     def update_key_states(self, key_event):
-        if key_event.keycode in ['KEY_LEFTSHIFT', 'KEY_RIGHTSHIFT']:
+        if key_event.keycode in ["KEY_LEFTSHIFT", "KEY_RIGHTSHIFT"]:
             self.shift_pressed = key_event.keystate == key_event.key_down
-        elif key_event.keycode == 'KEY_CAPSLOCK' and key_event.keystate == key_event.key_down:
+        elif (
+            key_event.keycode == "KEY_CAPSLOCK"
+            and key_event.keystate == key_event.key_down
+        ):
             self.caps_lock = not self.caps_lock
 
     def get_one_letter(self):
@@ -218,15 +247,25 @@ class Keyboard:
                 self.update_key_states(key_event)
                 if key_event.keystate == key_event.key_up:
                     try:
-                        if mapped_key := KEY_MAP.get(key_event.keycode[0] if isinstance(key_event.keycode, list) else key_event.keycode, ""):
-                            if mapped_key.isalpha() and (self.shift_pressed != self.caps_lock):
+                        if mapped_key := KEY_MAP.get(
+                            key_event.keycode[0]
+                            if isinstance(key_event.keycode, list)
+                            else key_event.keycode,
+                            "",
+                        ):
+                            if mapped_key.isalpha() and (
+                                self.shift_pressed != self.caps_lock
+                            ):
                                 mapped_key = mapped_key.upper()
                             return mapped_key
-                        elif key_event.keycode == 'KEY_VOLUMEUP':
+                        elif key_event.keycode == "KEY_VOLUMEUP":
                             self.set_volume(min(self.mixer.getvolume()[0] + 5, 100))
-                        elif key_event.keycode == 'KEY_VOLUMEDOWN':
+                        elif key_event.keycode == "KEY_VOLUMEDOWN":
                             self.set_volume(min(self.mixer.getvolume()[0] - 5, 100))
-                        elif isinstance(key_event.keycode, list) and key_event.keycode[0] == 'KEY_MIN_INTERESTING':
+                        elif (
+                            isinstance(key_event.keycode, list)
+                            and key_event.keycode[0] == "KEY_MIN_INTERESTING"
+                        ):
                             if self.mixer.getvolume()[0] > 0:
                                 self.volume = self.mixer.getvolume()[0]
                                 self.set_volume(0)
@@ -234,9 +273,10 @@ class Keyboard:
                                 self.set_volume(self.volume)
                         else:
                             logging.warning("Unsupported key: %s", key_event.keycode)
-                    except TypeError as e:
-                        logging.error("Error processing key: %s", str(key_event.keycode))
-
+                    except TypeError:
+                        logging.error(
+                            "Error processing key: %s", str(key_event.keycode)
+                        )
 
     def process_letter(self, _letter: str) -> None:
         if _letter in {"\n", " ", "\r"}:
