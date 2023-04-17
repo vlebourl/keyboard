@@ -148,21 +148,39 @@ try:
 except RuntimeError:
     logging.warning("Could not initialize LED strip, skipping")
 
+OFF = Color(0, 0, 0)
+RED = Color(255, 0, 0)
+WHITE = Color(255, 255, 255)
+GREEN = Color(0, 255, 0)
 
-def flash_red(num_flashes=3, flash_duration_ms=500):
-    red = Color(255, 0, 0)
-    off = Color(0, 0, 0)
-
+def flash_color(color=RED , num_flashes=5, flash_duration_ms=50):
+    if not led_strip:
+        return
     for _ in range(num_flashes):
         for i in range(strip.numPixels()):
-            strip.setPixelColor(i, red)
+            strip.setPixelColor(i, color)
+        strip.show()
+        time.sleep(flash_duration_ms / 1000.0)
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, OFF)
         strip.show()
         time.sleep(flash_duration_ms / 1000.0)
 
-        for i in range(strip.numPixels()):
-            strip.setPixelColor(i, off)
-        strip.show()
-        time.sleep(flash_duration_ms / 1000.0)
+def light_led_i(i, color, delay):
+    strip.setPixelColor(i, color)
+    strip.show()
+    time.sleep(delay)
+
+def running_leds(color=GREEN, delay=0.5):
+    if not led_strip:
+        return
+    for i in range(strip.numPixels()):
+        light_led_i(i, color, delay)
+    for i in range(strip.numPixels()):
+        light_led_i(i, OFF, delay)
+
+
+# TODO Rename this here and in `running_led`
 
 
 def find_keyboard_device_path():
@@ -170,7 +188,7 @@ def find_keyboard_device_path():
     if not device_paths:
         device_paths = glob.glob("/dev/input/by-id/*keyboard*")
     if not device_paths:
-        flash_red()
+        flash_color()
         raise ValueError("No keyboard device found!")
 
     if len(device_paths) == 1:
@@ -211,6 +229,7 @@ class GoogleTTS:
                         text,
                         retries,
                     )
+                    flash_color(RED)
                     return None
         return None
 
@@ -336,6 +355,7 @@ class Keyboard:
                     else:
                         logging.warning("Unsupported key: %s", key_event.keycode)
                 except TypeError:
+                    flash_color(RED)
                     logging.error("Error processing key: %s", str(key_event.keycode))
 
     def process_letter(self, _letter: str) -> None:
@@ -361,11 +381,13 @@ class Keyboard:
                 self.process_letter(_letter)
                 _letter = self.get_one_letter()
             except Exception as e:
+                flash_color(RED)
                 logging.error("Critical Exception: %s", e)
 
 
 if __name__ == "__main__":
     logging.info("Starting talking keyboard")
+    running_leds()
 
     keyboard = Keyboard()
 
@@ -380,6 +402,10 @@ if __name__ == "__main__":
     for word in keyboard.player.generated_words.keys():
         logging.info("    %s", word)
 
+    green_thread = threading.Thread(
+        target=running_leds, args=(GREEN,), daemon=True
+    )
+    green_thread.start()
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
     keyboard.process_letter("\n")
 
