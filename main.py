@@ -379,6 +379,7 @@ class Keyboard:
         if _letter in {"\n", " ", "\r"}:
             if self.word:
                 logging.info("playing word: %s", self.word)
+                light_up(OFF)
                 self.player.open_mp3_string_and_play(self.word)
                 self.word = ""
             return
