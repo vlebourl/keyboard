@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from main import GoogleTTS, PygameMP3Player, Keyboard
+
+from main import GoogleTTS, Keyboard, PygameMP3Player
+
 
 class TestGoogleTTS(unittest.TestCase):
 

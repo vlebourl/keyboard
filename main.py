@@ -5,13 +5,13 @@ import io
 import json
 import logging
 import os
-import requests
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 import alsaaudio
 import pygame
+import requests
 from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 
