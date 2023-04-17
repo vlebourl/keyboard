@@ -166,11 +166,12 @@ def _flash(color, flash_duration_ms):
     strip.show()
     time.sleep(flash_duration_ms / 1000.0)
 
-def flash(color=RED , num_flashes=5, flash_duration_ms=50):
-    global stop_green_thread  # Add this line to access the event
+def flash(color=RED , num_flashes=5, flash_duration_ms=50, do_stop=True):
     if not led_strip:
         return
-    stop_green_thread.set()  # Set the event to stop the green_thread
+    if do_stop:
+        global stop_green_thread  # Add this line to access the event
+        stop_green_thread.set()  # Set the event to stop the green_thread
     for _ in range(num_flashes):
         _flash(color, flash_duration_ms)
         _flash(OFF, flash_duration_ms)
@@ -397,7 +398,7 @@ class Keyboard:
 
 
 if __name__ == "__main__":
-    flash(WHITE)
+    flash(WHITE, do_stop=False)
     logging.info("Starting talking keyboard")
     green_thread = threading.Thread(
         target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
