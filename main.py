@@ -34,7 +34,7 @@ def parse_arguments():
 def generate_color_map(key_map):
     return {
         v: [
-            (
+            Color(
                 random.randint(0, 255),
                 random.randint(0, 255),
                 random.randint(0, 255),
@@ -149,11 +149,28 @@ except RuntimeError:
     logging.warning("Could not initialize LED strip, skipping")
 
 
+def flash_red(num_flashes=3, flash_duration_ms=500):
+    red = Color(255, 0, 0)
+    off = Color(0, 0, 0)
+
+    for _ in range(num_flashes):
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, red)
+        strip.show()
+        time.sleep(flash_duration_ms / 1000.0)
+
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, off)
+        strip.show()
+        time.sleep(flash_duration_ms / 1000.0)
+
+
 def find_keyboard_device_path():
     device_paths = glob.glob("/dev/input/by-id/*kbd*")
     if not device_paths:
         device_paths = glob.glob("/dev/input/by-id/*keyboard*")
     if not device_paths:
+        flash_red()
         raise ValueError("No keyboard device found!")
 
     if len(device_paths) == 1:
