@@ -385,7 +385,8 @@ class Keyboard:
             return
         if not _letter.isalnum():
             return
-
+        logging.debug("Got letter: %s", _letter)
+        logging.debug("lighting up: %s", str(COLOR_MAP[_letter]))
         light_up(COLOR_MAP[_letter])
 
         self.word += _letter
@@ -396,10 +397,7 @@ class Keyboard:
         _letter = self.get_one_letter()
         while True:
             try:
-                logging.debug("Got letter: %s", _letter)
-                logging.debug("Word: %s", self.word)
                 self.process_letter(_letter)
-                logging.debug("Word: %s", self.word)
                 _letter = self.get_one_letter()
             except Exception as e:
                 flash(RED)
