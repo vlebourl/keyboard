@@ -22,9 +22,7 @@ jobs:
           black==22.10.0 \
           click==8.0.4 \
           codespell==2.2.2 \
-          flake8==6.0.0 \
-          flake8-docstrings==1.5.0 \
-          pydocstyle==5.1.1 \
+          ruff==0.0.261 \
           isort==5.10.1 \
 
     - name: Install system dependencies
@@ -37,9 +35,9 @@ jobs:
       run: |
         codespell --ignore-words-list=threshHold,hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing --skip="./.*,*.csv,*.json,*.md" --quiet-level=2
 
-    - name: Run flake8
+    - name: Run ruff
       run: |
-        flake8 --config=.flake8 --select=D --exclude=*.csv,*.json .
+        ruff ./*.py
 
     - name: Run pyupgrade
       run: |
