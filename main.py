@@ -160,10 +160,10 @@ def light_up(color):
             strip.setPixelColor(i, color[i])
         else:
             strip.setPixelColor(i, color)
+    strip.show()
 
 def _flash(color, flash_duration_ms):
     light_up(color)
-    strip.show()
     time.sleep(flash_duration_ms / 1000.0)
 
 def flash(color=RED , num_flashes=5, flash_duration_ms=50, do_stop=True):
@@ -221,7 +221,6 @@ class LEDStripContext:
     def __exit__(self, exc_type, exc_value, traceback):
         if led_strip:
             light_up(OFF)
-            strip.show()
 
 class GoogleTTS:
     def __init__(self, language="fr"):
