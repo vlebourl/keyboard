@@ -438,7 +438,7 @@ if __name__ == "__main__":
         light_up(OFF)
         for v in COLOR_MAP.values():
             light_up(v)
-            time.sleep(0.01)
+            time.sleep(0.05)
         flash(GREEN)
         light_up(OFF)
         keyboard.loop()
