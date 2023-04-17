@@ -130,4 +130,5 @@ dmypy.json
 
 sounds/
 common_words.json
-Pipfile.lock
+
+.vscode/*
