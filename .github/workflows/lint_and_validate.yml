@@ -33,14 +33,6 @@ jobs:
     - name: Install dependencies
       run: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
 
-    - name: Run pyupgrade
-      run: |
-        pyupgrade --py37-plus $(find . -type f -name "*.py")
-
-    - name: Run black
-      run: |
-        black --safe --quiet --include '^((custom_components)/.+)?[^/]+\.py$' .
-
     - name: Run codespell
       run: |
         codespell --ignore-words-list=threshHold,hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing --skip="./.*,*.csv,*.json,*.md" --quiet-level=2
@@ -49,9 +41,20 @@ jobs:
       run: |
         flake8 --config=.flake8 --select=D --exclude=*.csv,*.json .
 
+    - name: Run pyupgrade
+      run: |
+        pyupgrade --py37-plus $(find . -type f -name "*.py")
+      continue-on-error: true
+
+    - name: Run black
+      run: |
+        black --safe --quiet --include '^((custom_components)/.+)?[^/]+\.py$' .
+      continue-on-error: true
+
     - name: Run isort
       run: |
         isort .
+      continue-on-error: true
 
     - name: Commit changes
       run: |
