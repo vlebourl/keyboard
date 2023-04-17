@@ -317,7 +317,7 @@ class Keyboard:
         self.device = InputDevice(device_path)
         self.mixer = alsaaudio.Mixer("PCM", cardindex=1)
         self.volume = self.mixer.getvolume()[0]
-        self.mixer.setvolume(0 if logging.level == logging.DEBUG else 90)
+        self.mixer.setvolume(0 if logging.root.level == logging.DEBUG else 90)
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
