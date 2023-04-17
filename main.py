@@ -131,6 +131,7 @@ LED_INVERT = False  # True to invert the signal (when using NPN transistor level
 LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
 # Create PixelStrip object
+stop_green_thread = threading.Event()
 led_strip = False
 try:
     strip = PixelStrip(
@@ -154,8 +155,10 @@ WHITE = Color(255, 255, 255)
 GREEN = Color(0, 255, 0)
 
 def flash_color(color=RED , num_flashes=5, flash_duration_ms=50):
+    global stop_green_thread  # Add this line to access the event
     if not led_strip:
         return
+    stop_green_thread.set()  # Set the event to stop the green_thread
     for _ in range(num_flashes):
         for i in range(strip.numPixels()):
             strip.setPixelColor(i, color)
@@ -171,13 +174,14 @@ def light_led_i(i, color, delay):
     strip.show()
     time.sleep(delay)
 
-def running_leds(color=GREEN, delay=0.5):
+def running_leds(color=GREEN, delay=0.5, stop_event=None):
     if not led_strip:
         return
-    for i in range(strip.numPixels()):
-        light_led_i(i, color, delay)
-    for i in range(strip.numPixels()):
-        light_led_i(i, OFF, delay)
+    while not stop_event.is_set():
+        for i in range(strip.numPixels()):
+            light_led_i(i, color, delay)
+        for i in range(strip.numPixels()):
+            light_led_i(i, OFF, delay)
 
 
 # TODO Rename this here and in `running_led`
@@ -387,7 +391,10 @@ class Keyboard:
 
 if __name__ == "__main__":
     logging.info("Starting talking keyboard")
-    running_leds()
+    green_thread = threading.Thread(
+        target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
+    )
+    green_thread.start()
 
     keyboard = Keyboard()
 
@@ -402,10 +409,6 @@ if __name__ == "__main__":
     for word in keyboard.player.generated_words.keys():
         logging.info("    %s", word)
 
-    green_thread = threading.Thread(
-        target=running_leds, args=(GREEN,), daemon=True
-    )
-    green_thread.start()
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
     keyboard.process_letter("\n")
 
@@ -414,4 +417,5 @@ if __name__ == "__main__":
     )
     save_thread.start()
 
+    flash_color(GREEN)
     keyboard.loop()
