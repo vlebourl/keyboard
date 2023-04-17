@@ -154,20 +154,27 @@ RED = Color(255, 0, 0)
 WHITE = Color(255, 255, 255)
 GREEN = Color(0, 255, 0)
 
-def flash_color(color=RED , num_flashes=5, flash_duration_ms=50):
+def light_up(color):
+    for i in range(strip.numPixels()):
+        if isinstance(color,"list"):
+            strip.setPixelColor(i, color[i])
+        else:
+            strip.setPixelColor(i, color)
+
+def _flash(color, flash_duration_ms):
+    light_up(color)
+    strip.show()
+    time.sleep(flash_duration_ms / 1000.0)
+
+def flash(color=RED , num_flashes=5, flash_duration_ms=50):
     global stop_green_thread  # Add this line to access the event
     if not led_strip:
         return
     stop_green_thread.set()  # Set the event to stop the green_thread
     for _ in range(num_flashes):
-        for i in range(strip.numPixels()):
-            strip.setPixelColor(i, color)
-        strip.show()
-        time.sleep(flash_duration_ms / 1000.0)
-        for i in range(strip.numPixels()):
-            strip.setPixelColor(i, OFF)
-        strip.show()
-        time.sleep(flash_duration_ms / 1000.0)
+        _flash(color, flash_duration_ms)
+        _flash(OFF, flash_duration_ms)
+
 
 def light_led_i(i, color, delay):
     strip.setPixelColor(i, color)
@@ -192,7 +199,7 @@ def find_keyboard_device_path():
     if not device_paths:
         device_paths = glob.glob("/dev/input/by-id/*keyboard*")
     if not device_paths:
-        flash_color()
+        flash()
         raise ValueError("No keyboard device found!")
 
     if len(device_paths) == 1:
@@ -233,7 +240,7 @@ class GoogleTTS:
                         text,
                         retries,
                     )
-                    flash_color(RED)
+                    flash(RED)
                     return None
         return None
 
@@ -359,7 +366,7 @@ class Keyboard:
                     else:
                         logging.warning("Unsupported key: %s", key_event.keycode)
                 except TypeError:
-                    flash_color(RED)
+                    flash(RED)
                     logging.error("Error processing key: %s", str(key_event.keycode))
 
     def process_letter(self, _letter: str) -> None:
@@ -385,7 +392,7 @@ class Keyboard:
                 self.process_letter(_letter)
                 _letter = self.get_one_letter()
             except Exception as e:
-                flash_color(RED)
+                flash(RED)
                 logging.error("Critical Exception: %s", e)
 
 
@@ -396,6 +403,8 @@ if __name__ == "__main__":
     )
     green_thread.start()
 
+    time.sleep(2)
+    
     keyboard = Keyboard()
 
     logging.info("Preloading common letters")
@@ -417,5 +426,6 @@ if __name__ == "__main__":
     )
     save_thread.start()
 
-    flash_color(GREEN)
+    light_up(OFF)
+    flash(GREEN)
     keyboard.loop()
