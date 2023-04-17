@@ -385,10 +385,9 @@ class Keyboard:
             return
         if not _letter.isalnum():
             return
-        if led_strip:
-            for i in range(strip.numPixels()):
-                strip.setPixelColor(i, COLOR_MAP[_letter])
-            strip.show()
+        
+        light_up(COLOR_MAP[_letter])
+
         self.word += _letter
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
@@ -411,9 +410,8 @@ if __name__ == "__main__":
             target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
         )
         green_thread.start()
-
         time.sleep(2)
-        
+
         keyboard = Keyboard()
 
         logging.info("Preloading common letters")
