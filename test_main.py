@@ -5,7 +5,6 @@ from main import GoogleTTS, Keyboard, PygameMP3Player
 
 
 class TestGoogleTTS(unittest.TestCase):
-
     def setUp(self):
         self.google_tts = GoogleTTS()
 
@@ -15,22 +14,20 @@ class TestGoogleTTS(unittest.TestCase):
 
 
 class TestPygameMP3Player(unittest.TestCase):
-
     def setUp(self):
         tts = MagicMock()
         self.mp3_player = PygameMP3Player(tts)
 
     def test_preload_sound(self):
-        with patch("main.open", unittest.mock.mock_open()), \
-             patch.object(self.mp3_player.tts, "generate") as mock_generate:
-
+        with patch("main.open", unittest.mock.mock_open()), patch.object(
+            self.mp3_player.tts, "generate"
+        ) as mock_generate:
             mock_generate.return_value = b"mp3_data"
             self.mp3_player.preload_sound("test")
             self.assertIn("test", self.mp3_player.generated_words)
 
 
 class TestKeyboard(unittest.TestCase):
-
     def setUp(self):
         with patch("main.InputDevice") as mock_input_device:
             self.keyboard = Keyboard()

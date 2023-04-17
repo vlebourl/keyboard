@@ -5,6 +5,7 @@ import io
 import json
 import logging
 import os
+import random
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -14,6 +15,7 @@ import pygame
 import requests
 from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
+from rpi_ws281x import Color, PixelStrip
 
 
 def parse_arguments():
@@ -27,6 +29,20 @@ def parse_arguments():
         help="Set the logging level (default: %(default))",
     )
     return parser.parse_args()
+
+
+def generate_color_map(key_map):
+    return {
+        v: [
+            (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+            )
+            for _ in range(10)
+        ]
+        for v in key_map.values()
+    }
 
 
 args = parse_arguments()
@@ -99,10 +115,38 @@ KEY_MAP = {
     "KEY_KP9": "9",
     # Add other keys as needed
 }
+COLOR_MAP = generate_color_map(KEY_MAP)
 
 MP3_DIR = "sounds"
 if not os.path.exists(MP3_DIR):
     os.makedirs(MP3_DIR)
+
+# LED strip configuration:
+LED_COUNT = 10  # Number of LED pixels.
+LED_PIN = 18  # GPIO pin connected to the pixels (must support PWM).
+LED_FREQ_HZ = 800000  # LED signal frequency in hertz (usually 800khz)
+LED_DMA = 10  # DMA channel to use for generating signal (try 10)
+LED_BRIGHTNESS = 255  # Set to 0 for darkest and 255 for brightest
+LED_INVERT = False  # True to invert the signal (when using NPN transistor level shift)
+LED_CHANNEL = 0  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+
+# Create PixelStrip object
+led_strip = False
+try:
+    strip = PixelStrip(
+        LED_COUNT,
+        LED_PIN,
+        LED_FREQ_HZ,
+        LED_DMA,
+        LED_INVERT,
+        LED_BRIGHTNESS,
+        LED_CHANNEL,
+    )
+    # Initialize the library
+    strip.begin()
+    led_strip = True
+except RuntimeError:
+    logging.warning("Could not initialize LED strip, skipping")
 
 
 def find_keyboard_device_path():
@@ -242,41 +286,40 @@ class Keyboard:
 
     def get_one_letter(self):
         for event in self.device.read_loop():
-            if event.type == ecodes.EV_KEY:
-                key_event = categorize(event)
-                self.update_key_states(key_event)
-                if key_event.keystate == key_event.key_up:
-                    try:
-                        if mapped_key := KEY_MAP.get(
-                            key_event.keycode[0]
-                            if isinstance(key_event.keycode, list)
-                            else key_event.keycode,
-                            "",
+            if event.type != ecodes.EV_KEY:
+                continue
+            key_event = categorize(event)
+            self.update_key_states(key_event)
+            if key_event.keystate == key_event.key_up:
+                try:
+                    if mapped_key := KEY_MAP.get(
+                        key_event.keycode[0]
+                        if isinstance(key_event.keycode, list)
+                        else key_event.keycode,
+                        "",
+                    ):
+                        if mapped_key.isalpha() and (
+                            self.shift_pressed != self.caps_lock
                         ):
-                            if mapped_key.isalpha() and (
-                                self.shift_pressed != self.caps_lock
-                            ):
-                                mapped_key = mapped_key.upper()
-                            return mapped_key
-                        elif key_event.keycode == "KEY_VOLUMEUP":
-                            self.set_volume(min(self.mixer.getvolume()[0] + 5, 100))
-                        elif key_event.keycode == "KEY_VOLUMEDOWN":
-                            self.set_volume(min(self.mixer.getvolume()[0] - 5, 100))
-                        elif (
-                            isinstance(key_event.keycode, list)
-                            and key_event.keycode[0] == "KEY_MIN_INTERESTING"
-                        ):
-                            if self.mixer.getvolume()[0] > 0:
-                                self.volume = self.mixer.getvolume()[0]
-                                self.set_volume(0)
-                            else:
-                                self.set_volume(self.volume)
+                            mapped_key = mapped_key.upper()
+                        return mapped_key
+                    elif key_event.keycode == "KEY_VOLUMEUP":
+                        self.set_volume(min(self.mixer.getvolume()[0] + 5, 100))
+                    elif key_event.keycode == "KEY_VOLUMEDOWN":
+                        self.set_volume(min(self.mixer.getvolume()[0] - 5, 100))
+                    elif (
+                        isinstance(key_event.keycode, list)
+                        and key_event.keycode[0] == "KEY_MIN_INTERESTING"
+                    ):
+                        if self.mixer.getvolume()[0] > 0:
+                            self.volume = self.mixer.getvolume()[0]
+                            self.set_volume(0)
                         else:
-                            logging.warning("Unsupported key: %s", key_event.keycode)
-                    except TypeError:
-                        logging.error(
-                            "Error processing key: %s", str(key_event.keycode)
-                        )
+                            self.set_volume(self.volume)
+                    else:
+                        logging.warning("Unsupported key: %s", key_event.keycode)
+                except TypeError:
+                    logging.error("Error processing key: %s", str(key_event.keycode))
 
     def process_letter(self, _letter: str) -> None:
         if _letter in {"\n", " ", "\r"}:
@@ -287,6 +330,10 @@ class Keyboard:
             return
         if not _letter.isalnum():
             return
+        if led_strip:
+            for i in range(strip.numPixels()):
+                strip.setPixelColor(i, COLOR_MAP[_letter])
+            strip.show()
         self.word += _letter
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
