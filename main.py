@@ -156,7 +156,7 @@ GREEN = Color(0, 255, 0)
 
 def light_up(color):
     for i in range(strip.numPixels()):
-        if isinstance(color,"list"):
+        if isinstance(color,list):
             strip.setPixelColor(i, color[i])
         else:
             strip.setPixelColor(i, color)
@@ -397,6 +397,7 @@ class Keyboard:
 
 
 if __name__ == "__main__":
+    flash(WHITE)
     logging.info("Starting talking keyboard")
     green_thread = threading.Thread(
         target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
