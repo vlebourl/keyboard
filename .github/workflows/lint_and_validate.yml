@@ -1,0 +1,67 @@
+name: Lint and Validate
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install \
+          pyupgrade==3.3.1 \
+          black==22.10.0 \
+          click==8.0.4 \
+          codespell==2.2.2 \
+          ruff==0.0.261 \
+          isort==5.10.1 \
+
+    - name: Install system dependencies
+      run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+    - name: Install dependencies
+      run: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+
+    - name: Run codespell
+      run: |
+        codespell --ignore-words-list=threshHold,hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing --skip="./.*,*.csv,*.json,*.md" --quiet-level=2
+
+    - name: Run ruff
+      run: |
+        ruff ./*.py
+
+    - name: Run pyupgrade
+      run: |
+        pyupgrade --py37-plus $(find . -type f -name "*.py")
+      continue-on-error: true
+
+    - name: Run black
+      run: |
+        black --safe --quiet --include '^((custom_components)/.+)?[^/]+\.py$' .
+      continue-on-error: true
+
+    - name: Run isort
+      run: |
+        isort .
+      continue-on-error: true
+
+    - name: Commit changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "github-actions@users.noreply.github.com"
+        git add -A
+        git diff-index --quiet HEAD || git commit -m "Apply automatic linting fixes"
+        git push
+      if: github.event_name == 'pull_request'

@@ -1,0 +1,31 @@
+name: Categorize PRs
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  label_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Categorize PR
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const pr_title = context.payload.pull_request.title;
+            const labels = [];
+            if (pr_title.startsWith("Feature:")) {
+              labels.push("feature");
+            } else if (pr_title.startsWith("Bugfix:")) {
+              labels.push("bug");
+            } else if (pr_title.startsWith("Refactor:")) {
+              labels.push("refactor");
+            }
+            github.rest.issues.setLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels,
+            });

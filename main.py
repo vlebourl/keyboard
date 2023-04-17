@@ -5,13 +5,13 @@ import io
 import json
 import logging
 import os
-import requests
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 import alsaaudio
 import pygame
+import requests
 from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 
@@ -199,7 +199,7 @@ class PygameMP3Player:
     def load_common_words(self):
         # suppress FileNotFoundError and json.decoder.JSONDecodeError
         with contextlib.suppress(FileNotFoundError, json.decoder.JSONDecodeError):
-            with open(COMMON_WORDS_FILE, "r", encoding="utf-8") as f:
+            with open(COMMON_WORDS_FILE, encoding="utf-8") as f:
                 self.generated_words = json.load(f)
 
     def save_common_words(self):
