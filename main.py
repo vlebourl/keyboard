@@ -318,7 +318,7 @@ class Keyboard:
         self.device = InputDevice(device_path)
         self.mixer = alsaaudio.Mixer("PCM", cardindex=1)
         self.volume = self.mixer.getvolume()[0]
-        self.mixer.setvolume(90)
+        self.mixer.setvolume(0)
         self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
         self.word = ""
@@ -392,10 +392,14 @@ class Keyboard:
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
     def loop(self):
+        logging.debug("Starting main loop")
         _letter = self.get_one_letter()
         while True:
             try:
+                logging.debug("Got letter: %s", _letter)
+                logging.debug("Word: %s", self.word)
                 self.process_letter(_letter)
+                logging.debug("Word: %s", self.word)
                 _letter = self.get_one_letter()
             except Exception as e:
                 flash(RED)
