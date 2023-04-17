@@ -29,9 +29,11 @@ jobs:
       run: |
         coverage report -m
 
-    - name: Generate and upload HTML coverage report
+    - name: Generate HTML coverage report
       run: |
         coverage html
+
+    - name: Upload HTML coverage report
       uses: actions/upload-artifact@v2
       with:
         name: coverage-html
