@@ -1,0 +1,5 @@
+pyalsaaudio
+evdev
+pygame
+gtts
+requests
