@@ -435,5 +435,7 @@ if __name__ == "__main__":
         save_thread.start()
 
         light_up(OFF)
-        flash(GREEN)
+        for v in COLOR_MAP.values():
+            light_up(v)
+            time.sleep(0.1)
         keyboard.loop()
