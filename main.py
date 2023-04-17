@@ -438,4 +438,5 @@ if __name__ == "__main__":
         for v in COLOR_MAP.values():
             light_up(v)
             time.sleep(0.1)
+        light_up(OFF)
         keyboard.loop()
