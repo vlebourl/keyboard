@@ -17,8 +17,8 @@ import requests
 from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 from rpi_ws281x import Color, PixelStrip
-
 from RPLCD.i2c import CharLCD
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -221,21 +221,27 @@ def preload_sounds_parallel(_keyboard, _letters):
 
 
 class LCDDisplay:
-
     COLS = 16
     ROWS = 2
 
     def __init__(self):
-        self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=self.COLS, rows=self.ROWS, dotsize=8)
-        self.buffer = ['','']
+        self.lcd = CharLCD(
+            i2c_expander="PCF8574",
+            address=0x27,
+            port=1,
+            cols=self.COLS,
+            rows=self.ROWS,
+            dotsize=8,
+        )
+        self.buffer = ["", ""]
         self.lcd.clear()
-        self.lcd.cursor_pos = (1,0)
+        self.lcd.cursor_pos = (1, 0)
 
     def _write_buffer(self):
         self.lcd.clear()
         for i in [0, 1]:
             self.lcd.cursor_pos = (i, 0)
-            self.lcd.write_string(self.buffer[i])      
+            self.lcd.write_string(self.buffer[i])
             logging.debug(f"writing: '{self.buffer[i]}'")
 
     def write_word(self, word):
@@ -267,7 +273,7 @@ class LCDDisplay:
 
     def clear(self):
         self.lcd.clear()
-        self.buffer = ['', '']
+        self.buffer = ["", ""]
 
 
 class LEDStripContext:
@@ -502,9 +508,9 @@ if __name__ == "__main__":
             time.sleep(0.05)
         flash(GREEN)
         light_up(OFF)
-       
+
         keyboard.lcd.lcd.clear()
-        keyboard.lcd.buffer = ["BONJOUR LENAIC","ECRIS UNE LETTRE"]
+        keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
         keyboard.lcd._write_buffer()
 
         keyboard.loop()
