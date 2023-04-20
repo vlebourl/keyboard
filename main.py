@@ -5,8 +5,7 @@ import io
 import json
 import logging
 import os
-import random
-import re
+import secrets
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -17,25 +16,7 @@ import requests
 from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 from rpi_ws281x import Color, PixelStrip
-from wifi import Cell, Scheme
 
-
-def parse_wpa_supplicant(file_path):
-    with open(file_path) as file:
-        contents = file.read()
-    ssid_pattern = re.compile(r'ssid="(.+?)"')
-    return ssid_pattern.findall(contents)
-
-def connect_to_wifi(ssid):
-    cells = Cell.all("wlan0")
-    available_networks = [cell.ssid for cell in cells]
-    if ssid in available_networks:
-        if cell := next((cell for cell in cells if cell.ssid == ssid), None):
-            scheme = Scheme.for_cell("wlan0", ssid, cell, "")
-            scheme.save()
-            scheme.activate()
-            return True
-    return False
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -54,9 +35,9 @@ def generate_color_map(key_map):
     return {
         v: [
             Color(
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
+                secrets.randbelow(256),
+                secrets.randbelow(256),
+                secrets.randbelow(256),
             )
             for _ in range(10)
         ]
@@ -429,19 +410,6 @@ if __name__ == "__main__":
         )
         green_thread.start()
         time.sleep(2)
-
-        wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
-        wpa_ssids = parse_wpa_supplicant(wpa_supplicant_path)
-        connected = False
-
-        for ssid in wpa_ssids:
-            if connect_to_wifi(ssid):
-                connected = True
-                logging.info(f"Connected to {ssid}")
-                break
-
-        if not connected:
-            raise Exception("No available Wi-Fi networks found in wpa_supplicant.conf")
 
         keyboard = Keyboard()
 
