@@ -154,19 +154,22 @@ RED = Color(255, 0, 0)
 WHITE = Color(255, 255, 255)
 GREEN = Color(0, 255, 0)
 
+
 def light_up(color):
     for i in range(strip.numPixels()):
-        if isinstance(color,list):
+        if isinstance(color, list):
             strip.setPixelColor(i, color[i])
         else:
             strip.setPixelColor(i, color)
     strip.show()
 
+
 def _flash(color, flash_duration_ms):
     light_up(color)
     time.sleep(flash_duration_ms / 1000.0)
 
-def flash(color=RED , num_flashes=5, flash_duration_ms=50, do_stop=True):
+
+def flash(color=RED, num_flashes=5, flash_duration_ms=50, do_stop=True):
     if not led_strip:
         return
     if do_stop:
@@ -181,6 +184,7 @@ def light_led_i(i, color, delay):
     strip.setPixelColor(i, color)
     strip.show()
     time.sleep(delay)
+
 
 def running_leds(color=GREEN, delay=0.5, stop_event=None):
     if not led_strip:
@@ -217,10 +221,11 @@ def preload_sounds_parallel(_keyboard, _letters):
 class LEDStripContext:
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         if led_strip:
             light_up(OFF)
+
 
 class GoogleTTS:
     def __init__(self, language="fr"):
@@ -406,7 +411,7 @@ if __name__ == "__main__":
         flash(WHITE, do_stop=False)
         logging.info("Starting talking keyboard")
         green_thread = threading.Thread(
-            target=running_leds, args=(GREEN,0.1, stop_green_thread), daemon=True
+            target=running_leds, args=(GREEN, 0.1, stop_green_thread), daemon=True
         )
         green_thread.start()
         time.sleep(2)
