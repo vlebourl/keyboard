@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import secrets
+import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -222,7 +223,7 @@ def preload_sounds_parallel(_keyboard, _letters):
 class LCDDisplay:
 
     COLS = 16
-    ROW = 2
+    ROWS = 2
 
     def __init__(self):
         self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=self.COLS, rows=self.ROWS, dotsize=8)
@@ -230,21 +231,35 @@ class LCDDisplay:
         self.lcd.clear()
         self.lcd.cursor_pos = (1,0)
 
+    def _write_buffer(self):
+        self.lcd.clear()
+        for i in [0, 1]:
+            self.lcd.cursor_pos = (i, 0)
+            self.lcd.write_string(self.buffer[i])      
+            logging.debug(f"writing: '{self.buffer[i]}'")
+
+    def write_word(self, word):
+        self.buffer[0] = word[:16]
+        self.buffer[1] = ""
+        self._write_buffer()
+
     def add_letter(self, letter):
         current_line = self.buffer[1]
-        if len(current_line) < self.cols:
+        logging.debug(f"cursor: {self.lcd.cursor_pos}")
+        if len(current_line) < self.COLS:
             current_line += letter
         else:
             current_line = current_line[1:] + letter
         self.buffer[1] = current_line
-        self.lcd.clear()
-        self.lcd.write_string("".join(self.buffer))
-    
+        self._write_buffer()
+
     def move_row_up(self):
-        buffer = self.buffer[1]
-        self.clear()
-        self.lcd.write_string(buffer)
-        
+        logging.debug(f"buffer: {self.buffer}")
+        self.buffer[0] = self.buffer[1]
+        self.buffer[1] = ""
+        logging.debug(f"new buffer: {self.buffer}")
+        self._write_buffer()
+
     def get_display_text(self, row=None):
         if row is None:
             return self.buffer
@@ -414,14 +429,18 @@ class Keyboard:
                     flash(RED)
                     logging.error("Error processing key: %s", str(key_event.keycode))
 
-    def process_letter(self, _letter: str) -> None:
+    def process_letter(self, _letter: str, print=True) -> None:
         if _letter in {"\n", " ", "\r"}:
+            if self.word == "exitnowarn":
+                logging.warn("Exit the script")
+                sys.exit(0)
             if self.word:
                 logging.info("playing word: %s", self.word)
                 light_up(OFF)
                 self.player.open_mp3_string_and_play(self.word)
+                if print:
+                    self.lcd.write_word(self.word.upper())
                 self.word = ""
-                self.lcd.move_row_up()
             return
         _letter = _letter.lower()
         if not _letter.isalnum():
@@ -470,7 +489,7 @@ if __name__ == "__main__":
             logging.info("    %s", word)
 
         keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
-        keyboard.process_letter("\n")
+        keyboard.process_letter("\n", False)
 
         save_thread = threading.Thread(
             target=keyboard.player.periodic_save, args=(300,), daemon=True
@@ -483,7 +502,9 @@ if __name__ == "__main__":
             time.sleep(0.05)
         flash(GREEN)
         light_up(OFF)
-
-        keyboard.lcd.lcd.write_string("ECRIS UNE LETTRE", 0, 1)
+       
+        keyboard.lcd.lcd.clear()
+        keyboard.lcd.buffer = ["BONJOUR LENAIC","ECRIS UNE LETTRE"]
+        keyboard.lcd._write_buffer()
 
         keyboard.loop()
