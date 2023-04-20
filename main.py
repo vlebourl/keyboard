@@ -19,70 +19,6 @@ from rpi_ws281x import Color, PixelStrip
 
 from RPLCD.i2c import CharLCD
 
-class LCDDisplay:
-
-    def __init__(self, cols=16, rows= 2):
-        self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=cols, rows=rows, dotsize=8)
-        self.cols = cols
-        self.rows = rows
-        self.buffer = ['' * cols for _ in range(rows)]
-        self.lcd.clear()
-        self.lcd.write_string("ECRIS UNE LETTRE")
-        self.lcd.cursor_pos = (1,0)
-
-    def write_string(self, text, row=None, col=None):
-        if row is not None and col is not None:
-            self.lcd.cursor_pos = (row, col)
-            self.buffer[row] = self.buffer[row][:col] + text + self.buffer[row][col + len(text):]
-
-        elif row is not None:
-            self.lcd.cursor_pos = (row, 0)
-            self.buffer[row] = text.ljust(self.cols)
-
-        else:
-            current_row, current_col = self.lcd.cursor_pos
-            if current_col + len(text) > self.cols:
-                if current_row == 1:
-                    self.buffer[0] = self.buffer[1]
-                    self.write_string(self.buffer[0], row=0)
-                    self.buffer[1] = ''
-                    current_col = 0
-                else:
-                    current_row += 1
-                    current_col = 0
-
-            self.lcd.cursor_pos = (current_row, current_col)
-            self.buffer[current_row] = self.buffer[current_row][:current_col] + text + self.buffer[current_row][current_col + len(text):]
-            self.lcd.write_string(text)
-            self.lcd.cursor_pos = (current_row, current_col + len(text))
-
-    def add_letter(self, letter):
-        row = 1  # Line 2 (row 1)
-        current_line = self.buffer[row]
-        if len(current_line) < self.cols:
-            current_line += letter
-        else:
-            current_line = current_line[1:] + letter
-        
-        self.buffer[row] = current_line
-        self.write_string(current_line, row=row)
-        self.lcd.cursor_pos = (row, len(current_line))
-    
-    def move_row_up(self):
-        buffer = self.buffer[1]
-        self.clear()
-        self.write_string(buffer, row=0)
-        
-    def get_display_text(self, row=None):
-        if row is None:
-            return self.buffer
-        return self.buffer[row]
-
-    def clear(self):
-        self.lcd.clear()
-        self.buffer = ['' * self.cols for _ in range(self.rows)]
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Talking keyboard with adjustable logging level"
@@ -281,6 +217,42 @@ def find_keyboard_device_path():
 def preload_sounds_parallel(_keyboard, _letters):
     with ThreadPoolExecutor() as executor:
         executor.map(_keyboard.player.preload_sound, _letters)
+
+
+class LCDDisplay:
+
+    COLS = 16
+    ROW = 2
+
+    def __init__(self):
+        self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=self.COLS, rows=self.ROWS, dotsize=8)
+        self.buffer = ['','']
+        self.lcd.clear()
+        self.lcd.cursor_pos = (1,0)
+
+    def add_letter(self, letter):
+        current_line = self.buffer[1]
+        if len(current_line) < self.cols:
+            current_line += letter
+        else:
+            current_line = current_line[1:] + letter
+        self.buffer[1] = current_line
+        self.lcd.clear()
+        self.lcd.write_string("".join(self.buffer))
+    
+    def move_row_up(self):
+        buffer = self.buffer[1]
+        self.clear()
+        self.lcd.write_string(buffer)
+        
+    def get_display_text(self, row=None):
+        if row is None:
+            return self.buffer
+        return self.buffer[row]
+
+    def clear(self):
+        self.lcd.clear()
+        self.buffer = ['', '']
 
 
 class LEDStripContext:
@@ -511,4 +483,7 @@ if __name__ == "__main__":
             time.sleep(0.05)
         flash(GREEN)
         light_up(OFF)
+
+        keyboard.lcd.lcd.write_string("ECRIS UNE LETTRE", 0, 1)
+
         keyboard.loop()
