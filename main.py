@@ -17,6 +17,46 @@ from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 from rpi_ws281x import Color, PixelStrip
 
+from RPLCD.i2c import CharLCD
+
+lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=16, rows=2, dotsize=8)
+lcd.clear()
+lcd.write_string("Bienvenu sur le clavier parlant")
+
+class LCDDisplay:
+
+    def __init__(self):
+        self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=16, rows=2, dotsize=8)
+        self.cols = cols
+        self.rows = rows
+        self.buffer = ['' * cols for _ in range(rows)]
+
+    def write_string(self, text, row=None, col=None):
+        if row is not None and col is not None:
+            self.lcd.cursor_pos = (row, col)
+            self.buffer[row] = self.buffer[row][:col] + text + self.buffer[row][col + len(text):]
+
+        elif row is not None:
+            self.lcd.cursor_pos = (row, 0)
+            self.buffer[row] = text.ljust(self.cols)
+
+        else:
+            self.lcd.write_string(text)
+            current_row, current_col = self.lcd.cursor_pos
+            current_line = self.buffer[current_row]
+            self.buffer[current_row] = current_line[:current_col] + text + current_line[current_col + len(text):]
+
+        self.lcd.write_string(text)
+
+    def get_display_text(self, row=None):
+        if row is None:
+            return self.buffer
+        return self.buffer[row]
+
+    def clear(self):
+        self.lcd.clear()
+        self.buffer = ['' * self.cols for _ in range(self.rows)]
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
