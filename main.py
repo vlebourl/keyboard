@@ -6,8 +6,10 @@ import json
 import logging
 import os
 import random
+import re
 import threading
 import time
+from wifi import Cell, Scheme
 from concurrent.futures import ThreadPoolExecutor
 
 import alsaaudio
@@ -17,6 +19,23 @@ from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 from rpi_ws281x import Color, PixelStrip
 
+
+def parse_wpa_supplicant(file_path):
+    with open(file_path, "r") as file:
+        contents = file.read()
+    ssid_pattern = re.compile(r'ssid="(.+?)"')
+    return ssid_pattern.findall(contents)
+
+def connect_to_wifi(ssid):
+    cells = Cell.all("wlan0")
+    available_networks = [cell.ssid for cell in cells]
+    if ssid in available_networks:
+        if cell := next((cell for cell in cells if cell.ssid == ssid), None):
+            scheme = Scheme.for_cell("wlan0", ssid, cell, "")
+            scheme.save()
+            scheme.activate()
+            return True
+    return False
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -351,10 +370,6 @@ class Keyboard:
                         else key_event.keycode,
                         "",
                     ):
-                        if mapped_key.isalpha() and (
-                            self.shift_pressed != self.caps_lock
-                        ):
-                            mapped_key = mapped_key.upper()
                         return mapped_key
                     elif key_event.keycode == "KEY_VOLUMEUP":
                         self.set_volume(min(self.mixer.getvolume()[0] + 5, 100))
@@ -383,6 +398,7 @@ class Keyboard:
                 self.player.open_mp3_string_and_play(self.word)
                 self.word = ""
             return
+        _letter = _letter.lower()
         if not _letter.isalnum():
             return
         logging.debug("Got letter: %s", _letter)
@@ -413,6 +429,19 @@ if __name__ == "__main__":
         )
         green_thread.start()
         time.sleep(2)
+
+        wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
+        wpa_ssids = parse_wpa_supplicant(wpa_supplicant_path)
+        connected = False
+
+        for ssid in wpa_ssids:
+            if connect_to_wifi(ssid):
+                connected = True
+                logging.info(f"Connected to {ssid}")
+                break
+
+        if not connected:
+            raise Exception("No available Wi-Fi networks found in wpa_supplicant.conf")
 
         keyboard = Keyboard()
 
