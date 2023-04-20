@@ -9,7 +9,6 @@ import random
 import re
 import threading
 import time
-from wifi import Cell, Scheme
 from concurrent.futures import ThreadPoolExecutor
 
 import alsaaudio
@@ -18,10 +17,11 @@ import requests
 from evdev import InputDevice, categorize, ecodes
 from gtts import gTTS
 from rpi_ws281x import Color, PixelStrip
+from wifi import Cell, Scheme
 
 
 def parse_wpa_supplicant(file_path):
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         contents = file.read()
     ssid_pattern = re.compile(r'ssid="(.+?)"')
     return ssid_pattern.findall(contents)
