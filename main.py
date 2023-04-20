@@ -19,10 +19,6 @@ from rpi_ws281x import Color, PixelStrip
 
 from RPLCD.i2c import CharLCD
 
-lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=16, rows=2, dotsize=8)
-lcd.clear()
-lcd.write_string("Bienvenu sur le clavier parlant")
-
 class LCDDisplay:
 
     def __init__(self, cols=16, rows= 2):
@@ -30,6 +26,8 @@ class LCDDisplay:
         self.cols = cols
         self.rows = rows
         self.buffer = ['' * cols for _ in range(rows)]
+        self.lcd.clear()
+        self.lcd.write_string("ECRIS UNE LETTRE")
         self.lcd.cursor_pos = (1,0)
 
     def write_string(self, text, row=None, col=None):
@@ -395,6 +393,7 @@ class Keyboard:
         self.word = ""
         self.shift_pressed = False
         self.caps_lock = False
+        self.lcd = LCDDisplay()
 
     def set_volume(self, vol):
         self.mixer.setvolume(vol)
@@ -450,6 +449,7 @@ class Keyboard:
                 light_up(OFF)
                 self.player.open_mp3_string_and_play(self.word)
                 self.word = ""
+                self.lcd.move_row_up()
             return
         _letter = _letter.lower()
         if not _letter.isalnum():
@@ -459,6 +459,7 @@ class Keyboard:
         light_up(COLOR_MAP[_letter])
 
         self.word += _letter
+        self.lcd.add_letter(_letter.upper())
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
     def loop(self):
