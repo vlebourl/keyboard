@@ -25,11 +25,12 @@ lcd.write_string("Bienvenu sur le clavier parlant")
 
 class LCDDisplay:
 
-    def __init__(self):
-        self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=16, rows=2, dotsize=8)
+    def __init__(self, cols=16, rows= 2):
+        self.lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=1, cols=cols, rows=rows, dotsize=8)
         self.cols = cols
         self.rows = rows
         self.buffer = ['' * cols for _ in range(rows)]
+        self.lcd.cursor_pos = (1,0)
 
     def write_string(self, text, row=None, col=None):
         if row is not None and col is not None:
@@ -41,13 +42,39 @@ class LCDDisplay:
             self.buffer[row] = text.ljust(self.cols)
 
         else:
-            self.lcd.write_string(text)
             current_row, current_col = self.lcd.cursor_pos
-            current_line = self.buffer[current_row]
-            self.buffer[current_row] = current_line[:current_col] + text + current_line[current_col + len(text):]
+            if current_col + len(text) > self.cols:
+                if current_row == 1:
+                    self.buffer[0] = self.buffer[1]
+                    self.write_string(self.buffer[0], row=0)
+                    self.buffer[1] = ''
+                    current_col = 0
+                else:
+                    current_row += 1
+                    current_col = 0
 
-        self.lcd.write_string(text)
+            self.lcd.cursor_pos = (current_row, current_col)
+            self.buffer[current_row] = self.buffer[current_row][:current_col] + text + self.buffer[current_row][current_col + len(text):]
+            self.lcd.write_string(text)
+            self.lcd.cursor_pos = (current_row, current_col + len(text))
 
+    def add_letter(self, letter):
+        row = 1  # Line 2 (row 1)
+        current_line = self.buffer[row]
+        if len(current_line) < self.cols:
+            current_line += letter
+        else:
+            current_line = current_line[1:] + letter
+        
+        self.buffer[row] = current_line
+        self.write_string(current_line, row=row)
+        self.lcd.cursor_pos = (row, len(current_line))
+    
+    def move_row_up(self):
+        buffer = self.buffer[1]
+        self.clear()
+        self.write_string(buffer, row=0)
+        
     def get_display_text(self, row=None):
         if row is None:
             return self.buffer
