@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from audio import GoogleTTS, PygameMP3Player
-
-from keyboard import Keyboard
+from talking_keyboard.audio import GoogleTTS, PygameMP3Player
+from talking_keyboard.keyboard import Keyboard
+from talking_keyboard.main import parse_arguments
 
 
 class TestGoogleTTS(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestPygameMP3Player(unittest.TestCase):
         self.mp3_player = PygameMP3Player(tts)
 
     def test_preload_sound(self):
-        with patch("main.open", unittest.mock.mock_open()), patch.object(
+        with patch("talking_keyboard.main.open", unittest.mock.mock_open()), patch.object(
             self.mp3_player.tts, "generate"
         ) as mock_generate:
             mock_generate.return_value = b"mp3_data"
@@ -31,7 +31,7 @@ class TestPygameMP3Player(unittest.TestCase):
 
 class TestKeyboard(unittest.TestCase):
     def setUp(self):
-        with patch("main.InputDevice") as mock_input_device:
+        with patch("talking_keyboard.main.InputDevice") as mock_input_device:
             self.keyboard = Keyboard()
             self.mock_input_device = mock_input_device
 
@@ -41,9 +41,19 @@ class TestKeyboard(unittest.TestCase):
             mock_setvolume.assert_called_once_with(80)
 
     def test_find_keyboard_device_path(self):
-        with patch("main.glob.glob", return_value=["/dev/input/by-id/test-kbd"]):
+        with patch("talking_keyboard.main.glob.glob", return_value=["/dev/input/by-id/test-kbd"]):
             device_path = self.keyboard.find_keyboard_device_path()
             self.assertEqual(device_path, "/dev/input/by-id/test-kbd")
+
+
+class TestMain(unittest.TestCase):
+    def test_parse_arguments(self):
+        args = parse_arguments(["--loglevel", "DEBUG"])
+        self.assertEqual(args.loglevel, "DEBUG")
+
+    def test_parse_arguments_invalid(self):
+        with self.assertRaises(SystemExit):
+            parse_arguments(["--loglevel", "INVALID"])
 
 
 if __name__ == "__main__":

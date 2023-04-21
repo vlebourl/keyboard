@@ -5,10 +5,9 @@ import sys
 import threading
 import time
 
-from const import COMMON_LETTERS, KEY_MAP
-from led import LEDStrip
-
+from talking_keyboard.const import COMMON_LETTERS, KEY_MAP
 from talking_keyboard.keyboard import Keyboard
+from talking_keyboard.led import LEDStrip
 
 
 def parse_arguments():
