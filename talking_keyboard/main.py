@@ -1,11 +1,14 @@
 import argparse
 import logging
+import os
+import sys
 import threading
 import time
 
 from const import COMMON_LETTERS, KEY_MAP
-from keyboard import Keyboard
 from led import LEDStrip
+
+from talking_keyboard.keyboard import Keyboard
 
 
 def parse_arguments():
@@ -33,6 +36,11 @@ logging.basicConfig(
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+if os.geteuid() != 0:
+    _LOGGER.error("This script must be run with sudo privileges.")
+    sys.exit(1)
+
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
 if __name__ == "__main__":

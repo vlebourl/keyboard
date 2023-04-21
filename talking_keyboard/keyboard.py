@@ -4,9 +4,9 @@ import sys
 
 from evdev import InputDevice, categorize, ecodes
 
-from audio import AlsaMixer, GoogleTTS, PygameMP3Player
-from const import KEY_MAP
-from lcd import LCDDisplay
+from talking_keyboard.audio import AlsaMixer, GoogleTTS, PygameMP3Player
+from talking_keyboard.const import KEY_MAP
+from talking_keyboard.lcd import LCDDisplay
 
 _LOGGER = logging.getLogger(__name__)
 
