@@ -132,3 +132,4 @@ sounds/
 common_words.json
 
 .vscode/*
+.vscode/settings.json

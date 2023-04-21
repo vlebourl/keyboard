@@ -3,3 +3,5 @@ evdev
 pygame
 gtts
 requests
+rpi_ws281x
+RPLCD
