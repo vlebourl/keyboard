@@ -23,7 +23,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        coverage run --source=. -m unittest discover -s . -p '*_test.py'
+        coverage run --source=. -m unittest discover -s tests -p 'test_*.py' -t tests/
         coverage xml
 
     - name: Report coverage
