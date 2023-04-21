@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from audio import GoogleTTS, PygameMP3Player
+
 from keyboard import Keyboard
 
 
