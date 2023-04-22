@@ -24,7 +24,7 @@ class Keyboard:
         self.device = InputDevice(_device_paths[0])
         self.mixer = AlsaMixer()
 
-        self.mixer.setvolume(0 if logging.root.level == logging.DEBUG else 90)
+        self.mixer.set_volume(0 if logging.root.level == logging.DEBUG else 90)
         self.tts = GoogleTTS(led_strip)
         self.player = PygameMP3Player(self.tts)
 

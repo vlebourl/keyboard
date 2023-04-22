@@ -1,6 +1,7 @@
 import logging
 import secrets
 import threading
+import time
 
 from rpi_ws281x import Color, PixelStrip
 
@@ -75,14 +76,14 @@ class LEDStrip:
 
     def _flash(self, color, flash_duration_ms):
         self.light_up(color)
-        self.time.sleep(flash_duration_ms / 1000.0)
+        time.sleep(flash_duration_ms / 1000.0)
 
     def flash(self, color=RED, num_flashes=5, flash_duration_ms=50, do_stop=True):
         if not self.led_strip:
             return
         if do_stop:
-            global stop_green_thread  # Add this line to access the event
-            stop_green_thread.set()  # Set the event to stop the green_thread
+            #global stop_green_thread  # Add this line to access the event
+            self.stop_green_thread.set()  # Set the event to stop the green_thread
         for _ in range(num_flashes):
             self._flash(color, flash_duration_ms)
             self._flash(self.OFF, flash_duration_ms)
@@ -90,7 +91,7 @@ class LEDStrip:
     def light_led_i(self, i, color, delay):
         self.strip.setPixelColor(i, color)
         self.strip.show()
-        self.time.sleep(delay)
+        time.sleep(delay)
 
     def running_leds(self, color=GREEN, delay=0.5, stop_event=None):
         if not self.led_strip:
