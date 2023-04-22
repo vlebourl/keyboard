@@ -24,7 +24,7 @@ class Keyboard:
         self.device = InputDevice(_device_paths[0])
         self.mixer = AlsaMixer()
 
-        self.mixer.set_volume(0 if logging.root.level == logging.DEBUG else 90)
+        self.mixer.set_volume(0 if logging.root.level == logging.DEBUG else 100)
         self.tts = GoogleTTS(led_strip)
         self.player = PygameMP3Player(self.tts)
 
@@ -58,15 +58,15 @@ class Keyboard:
                     ):
                         return mapped_key
                     elif key_event.keycode == "KEY_VOLUMEUP":
-                        self.mixer.set_volume(min(self.mixer.getvolume()[0] + 5, 100))
+                        self.mixer.set_volume(min(self.mixer.mixer.getvolume()[0] + 5, 100))
                     elif key_event.keycode == "KEY_VOLUMEDOWN":
-                        self.mixer.set_volume(min(self.mixer.getvolume()[0] - 5, 100))
+                        self.mixer.set_volume(min(self.mixer.mixer.getvolume()[0] - 5, 100))
                     elif (
                         isinstance(key_event.keycode, list)
                         and key_event.keycode[0] == "KEY_MIN_INTERESTING"
                     ):
-                        if self.mixer.getvolume()[0] > 0:
-                            self.mixer.volume = self.mixer.getvolume()[0]
+                        if self.mixer.mixer.getvolume()[0] > 0:
+                            self.mixer.volume = self.mixer.mixer.getvolume()[0]
                             self.mixer.set_volume(0)
                         else:
                             self.mixer.set_volume(self.mixer.volume)
