@@ -44,7 +44,7 @@ _LOGGER.info("Starting up with log level %d", numeric_level)
 
 if __name__ == "__main__":
     with LEDStrip() as led_strip:
-        led_strip.flash(led_strip.WHITE, do_stop=False)
+        led_strip.flash(led_strip.WHITE)
         _LOGGER.info("Starting talking keyboard")
         green_thread = threading.Thread(
             target=led_strip.running_leds,

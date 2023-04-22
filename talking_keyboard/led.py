@@ -85,12 +85,9 @@ class LEDStrip:
         self.light_up(color)
         time.sleep(flash_duration_ms / 1000.0)
 
-    def flash(self, color=RED, num_flashes=5, flash_duration_ms=50, do_stop=True):
+    def flash(self, color=RED, num_flashes=5, flash_duration_ms=50):
         if not self.led_strip:
             return
-        if do_stop:
-            #global stop_green_thread  # Add this line to access the event
-            self.stop_green_thread()  # Set the event to stop the green_thread
         for _ in range(num_flashes):
             self._flash(color, flash_duration_ms)
             self._flash(self.OFF, flash_duration_ms)
