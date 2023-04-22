@@ -35,7 +35,7 @@ class LEDStrip:
     def __init__(self) -> None:
         try:
             # Create PixelStrip object
-            self.stop_green_thread = threading.Event()
+            self.green_thread_event = threading.Event()
             self.led_strip = False
 
             self.strip = PixelStrip(
@@ -53,6 +53,13 @@ class LEDStrip:
         except RuntimeError:
             _LOGGER.warning("Could not initialize LED strip, skipping")
 
+    def stop_green_thread(self, thread):
+        """
+        Stop the green_thread by setting the stop_green_thread event.
+        """
+        self.green_thread_event.set()   
+        thread.join()
+     
     def generate_color_map(self, key_map):
         return {
             v: [
@@ -83,7 +90,7 @@ class LEDStrip:
             return
         if do_stop:
             #global stop_green_thread  # Add this line to access the event
-            self.stop_green_thread.set()  # Set the event to stop the green_thread
+            self.stop_green_thread()  # Set the event to stop the green_thread
         for _ in range(num_flashes):
             self._flash(color, flash_duration_ms)
             self._flash(self.OFF, flash_duration_ms)
