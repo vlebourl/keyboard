@@ -48,7 +48,7 @@ if __name__ == "__main__":
         _LOGGER.info("Starting talking keyboard")
         green_thread = threading.Thread(
             target=led_strip.running_leds,
-            args=(led_strip.GREEN, 0.1, led_strip.stop_green_thread),
+            args=(led_strip.GREEN, 0.1, led_strip.green_thread_event),
             daemon=True,
         )
         green_thread.start()
@@ -74,7 +74,7 @@ if __name__ == "__main__":
             target=keyboard.player.periodic_save, args=(300,), daemon=True
         )
         save_thread.start()
-
+        led_strip.stop_green_thread(green_thread)
         led_strip.light_up(led_strip.OFF)
         for v in led_strip.generate_color_map(KEY_MAP).values():
             led_strip.light_up(v)
