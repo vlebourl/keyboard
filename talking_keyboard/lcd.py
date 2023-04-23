@@ -29,9 +29,9 @@ class LCDDisplay:
             self.lcd.write_string(self.buffer[i])
             _LOGGER.debug(f"writing: '{self.buffer[i]}'")
 
-    def write_word(self, word):
-        self.buffer[0] = word[:16]
-        self.buffer[1] = ""
+    def write_words(self, word1, word2):
+        self.buffer[0] = word1[:16]
+        self.buffer[1] = word2[:16]
         self._write_buffer()
 
     def add_letter(self, letter):

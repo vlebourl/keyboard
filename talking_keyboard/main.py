@@ -1,12 +1,14 @@
 import argparse
 import logging
 import os
+import subprocess
 import sys
 import threading
 import time
 
 from talking_keyboard.const import COMMON_LETTERS, KEY_MAP
 from talking_keyboard.keyboard import Keyboard
+from talking_keyboard.lcd import LCDDisplay
 from talking_keyboard.led import LEDStrip
 
 
@@ -42,6 +44,39 @@ if os.geteuid() != 0:
 
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
+def check_internet_connection():
+    try:
+        response = subprocess.check_output("ping -c 1 google.com", shell=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+def update_wpa_supplicant(ssid, psk):
+    wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
+
+    with open(wpa_supplicant_path, "a") as f:
+        f.write(f"\nnetwork={{\nssid=\"{ssid}\"\npsk=\"{psk}\"\n}}\n")
+
+    subprocess.call(["sudo", "systemctl", "daemon-reload"])
+    subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
+
+def get_user_input(prompt, lcd):
+    lcd.write_words(prompt, "")
+    user_input = ""
+
+    while True:
+        char = input()
+        if char == '\n':
+            break
+        elif char == '\b':
+            user_input = user_input[:-1]
+            lcd.write_words(prompt, user_input)
+        elif char:
+            user_input += char
+            lcd.add_letter(char)
+
+    return user_input
+
 if __name__ == "__main__":
     with LEDStrip() as led_strip:
         led_strip.flash(led_strip.WHITE)
@@ -53,8 +88,23 @@ if __name__ == "__main__":
         )
         green_thread.start()
         time.sleep(2)
+        # Initialize LCD
+        lcd = LCDDisplay()
 
-        keyboard = Keyboard(led_strip=led_strip)
+        wifi = check_internet_connection()
+        # Check internet connection
+        while not wifi:
+            lcd.write_words("No wifi", "")
+            time.sleep(2)
+            ssid = get_user_input("wifi SSID:", lcd)
+            psk = get_user_input("wifi PSK:", lcd)
+            update_wpa_supplicant(ssid, psk)
+            time.sleep(5)
+            wifi = check_internet_connection()
+            lcd.write_words("wifi OK" if wifi else "wifi Failed", "")
+            time.sleep(2)
+            
+        keyboard = Keyboard(led_strip=led_strip, lcd=lcd)
 
         _LOGGER.info("Preloading common letters")
         for letter in COMMON_LETTERS:

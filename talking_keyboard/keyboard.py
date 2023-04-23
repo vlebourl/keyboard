@@ -6,13 +6,12 @@ from evdev import InputDevice, categorize, ecodes
 
 from talking_keyboard.audio import AlsaMixer, GoogleTTS, PygameMP3Player
 from talking_keyboard.const import KEY_MAP
-from talking_keyboard.lcd import LCDDisplay
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Keyboard:
-    def __init__(self, led_strip):
+    def __init__(self, led_strip, lcd):
         self.led_strip = led_strip
         self.COLOR_MAP = self.led_strip.generate_color_map(KEY_MAP)
         _device_paths = glob.glob("/dev/input/by-id/*kbd*")
@@ -31,7 +30,7 @@ class Keyboard:
         self.word = ""
         self.shift_pressed = False
         self.caps_lock = False
-        self.lcd = LCDDisplay()
+        self.lcd = lcd
 
     def update_key_states(self, key_event):
         if key_event.keycode in ["KEY_LEFTSHIFT", "KEY_RIGHTSHIFT"]:
@@ -86,7 +85,7 @@ class Keyboard:
                 self.led_strip.light_up(self.led_strip.OFF)
                 self.player.open_mp3_string_and_play(self.word)
                 if print:
-                    self.lcd.write_word(self.word.upper())
+                    self.lcd.write_words(self.word.upper(), "")
                 self.word = ""
             return
         _letter = _letter.lower()
