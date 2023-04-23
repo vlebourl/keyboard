@@ -101,9 +101,9 @@ if __name__ == "__main__":
             update_wpa_supplicant(ssid, psk)
             time.sleep(5)
             wifi = check_internet_connection()
-            lcd.write_words("wifi OK" if wifi else "wifi Failed", "")
             time.sleep(2)
             
+        lcd.write_words("wifi OK", "")
         keyboard = Keyboard(led_strip=led_strip, lcd=lcd)
 
         _LOGGER.info("Preloading common letters")
