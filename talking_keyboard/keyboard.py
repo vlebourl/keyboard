@@ -57,23 +57,28 @@ class Keyboard:
                     ):
                         return mapped_key
                     elif key_event.keycode == "KEY_VOLUMEUP":
-                        self.mixer.set_volume(min(self.mixer.mixer.getvolume()[0] + 5, 100))
+                        self.mixer.set_volume(min(self.mixer.getvolume() + 5, 100))
+                        self.lcd.write_words(f"Volume up: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
                     elif key_event.keycode == "KEY_VOLUMEDOWN":
-                        self.mixer.set_volume(min(self.mixer.mixer.getvolume()[0] - 5, 100))
+                        self.mixer.set_volume(min(self.mixer.getvolume() - 5, 100))
+                        self.lcd.write_words(f"Volume down: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
                     elif (
                         isinstance(key_event.keycode, list)
                         and key_event.keycode[0] == "KEY_MIN_INTERESTING"
                     ):
                         if self.mixer.mixer.getvolume()[0] > 0:
-                            self.mixer.volume = self.mixer.mixer.getvolume()[0]
+                            self.mixer.volume = self.mixer.getvolume()
                             self.mixer.set_volume(0)
+                            self.lcd.write_words("Mute", self.lcd.get_buffer()[1])
                         else:
                             self.mixer.set_volume(self.mixer.volume)
+                            self.lcd.write_words("Unmute", self.lcd.get_buffer()[1])
                     else:
                         _LOGGER.warning("Unsupported key: %s", key_event.keycode)
-                except TypeError:
+                except TypeError as e:
                     self.led_strip.flash(self.led_strip.RED)
                     _LOGGER.error("Error processing key: %s", str(key_event.keycode))
+                    _LOGGER.error(e)
 
     def process_letter(self, _letter: str, print=True) -> None:
         if _letter in {"\n", " ", "\r"}:

@@ -28,6 +28,9 @@ class LCDDisplay:
             self.lcd.cursor_pos = (i, 0)
             self.lcd.write_string(self.buffer[i])
             _LOGGER.debug(f"writing: '{self.buffer[i]}'")
+    
+    def get_buffer(self):
+        return self.buffer
 
     def write_words(self, word1, word2):
         self.buffer[0] = word1[:16]
