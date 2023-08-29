@@ -22,6 +22,8 @@ jobs:
               labels.push("bug");
             } else if (pr_title.startsWith("Refactor:")) {
               labels.push("refactor");
+            } else if (pr_title.startsWith("Enhancement:")) {
+              labels.push("enhancement");
             }
             github.rest.issues.setLabels({
               issue_number: context.issue.number,

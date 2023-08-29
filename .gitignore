@@ -131,4 +131,4 @@ dmypy.json
 sounds/
 common_words.json
 
-.vscode/*
+.vscode/

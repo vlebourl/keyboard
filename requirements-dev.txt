@@ -1,0 +1,6 @@
+setuptools
+black
+isort
+ruff
+pre-commit
+coverage
