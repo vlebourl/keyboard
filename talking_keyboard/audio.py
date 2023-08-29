@@ -68,9 +68,21 @@ class PygameMP3Player:
 
         self.load_common_words()
 
-        pygame.init()
-        self.player = pygame.mixer
-        self.player.init()
+        try:
+            # Check if audio devices are available
+            if len(alsaaudio.cards()) == 0:
+                raise Exception("No ALSA audio devices found.")
+
+            pygame.init()
+            self.player = pygame.mixer
+            self.player.init()
+        except pygame.error as e:
+            _LOGGER.error(f"Failed to initialize Pygame audio: {e}")
+            raise
+        except Exception as e:
+            _LOGGER.error(f"General error initializing audio: {e}")
+            raise
+
 
     def preload_sound(self, text):
         filename = os.path.join(MP3_DIR, f"{text}.mp3")
