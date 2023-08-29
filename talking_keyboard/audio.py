@@ -79,9 +79,9 @@ class PygameMP3Player:
         self.load_common_words()
 
         try:
-            # Validate if card 1 is available
-            if '1' not in [str(idx) for idx in range(len(alsaaudio.cards()))]:
-                raise Exception("Card 1 is not available.")
+            cardindex = find_usb_card_index()
+            if cardindex is None:
+                raise Exception("USB card is not available.")
 
             pygame.init()
             self.player = pygame.mixer
