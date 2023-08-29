@@ -15,9 +15,19 @@ from talking_keyboard.const import COMMON_WORDS_FILE, MP3_DIR
 _LOGGER = logging.getLogger(__name__)
 
 
+def find_usb_card_index(target_name="UACDemoV1.0"):
+    for idx, name in enumerate(alsaaudio.cards()):
+        if target_name in name:
+            _LOGGER.debug(f"Found card {target_name} at index {idx}")
+            return idx
+    raise Exception(f"Could not find USB card with name containing {target_name}")
+
+
 class AlsaMixer:
-    def __init__(self, mixer_name="PCM", cardindex=1):
-        self.mixer = alsaaudio.Mixer("PCM", cardindex=1)
+    def __init__(self, mixer_name="PCM"):
+        # Validate the card index
+        cardindex = find_usb_card_index()
+        self.mixer = alsaaudio.Mixer(mixer_name, cardindex=cardindex)
         self.volume = self.getvolume()
     
     def getvolume(self):
@@ -69,9 +79,9 @@ class PygameMP3Player:
         self.load_common_words()
 
         try:
-            # Check if audio devices are available
-            if len(alsaaudio.cards()) == 0:
-                raise Exception("No ALSA audio devices found.")
+            # Validate if card 1 is available
+            if '1' not in [str(idx) for idx in range(len(alsaaudio.cards()))]:
+                raise Exception("Card 1 is not available.")
 
             pygame.init()
             self.player = pygame.mixer
