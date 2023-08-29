@@ -86,6 +86,7 @@ class PygameMP3Player:
             pygame.init()
             self.player = pygame.mixer
             self.player.init()
+            _LOGGER.debug(f"Player initialized")
         except pygame.error as e:
             _LOGGER.error(f"Failed to initialize Pygame audio: {e}")
             raise
