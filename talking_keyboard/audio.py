@@ -17,8 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 def find_usb_card_index(target_name="UACDemoV10"):
     for idx, name in enumerate(alsaaudio.cards()):
+        _LOGGER.debug(f"Found card {name} at index {idx}")
         if target_name in name:
-            _LOGGER.debug(f"Found card {target_name} at index {idx}")
             return idx
     raise Exception(f"Could not find USB card with name containing {target_name}")
 
