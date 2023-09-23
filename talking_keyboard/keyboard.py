@@ -110,12 +110,23 @@ class Keyboard:
                 self.word = SWISS[self.word]
                 _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
                 return
-            if word > 99:
-                preword = 100 * (int( word / 100))
-                postword = str(word - preword)
-                if postword in SWISS.keys():
-                    self.word = f"{preword}-{SWISS[postword]}"
-                    _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
+    
+            parts = []
+            while word:
+                segment = word % 1000  # Extract last three digits
+                word = word // 1000  # Remove last three digits
+    
+                last_two_digits = segment % 100  # Extract last two digits of the segment
+                if str(last_two_digits) in SWISS.keys():
+                    swiss_version = SWISS[str(last_two_digits)]
+                    first_digit = segment // 100  # Extract the first digit of the segment
+                    parts.insert(0, f"{first_digit}{swiss_version}")
+                else:
+                    parts.insert(0, str(segment))
+    
+            self.word = '-'.join(parts)
+            _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
+    
         except ValueError:
             return 
 
