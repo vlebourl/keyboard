@@ -4,6 +4,7 @@ import sys
 
 from evdev import InputDevice, categorize, ecodes
 from num2words import num2words as n2w
+
 from talking_keyboard.audio import AlsaMixer, GoogleTTS, PygameMP3Player
 from talking_keyboard.const import KEY_MAP
 
