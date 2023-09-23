@@ -15,9 +15,19 @@ from talking_keyboard.const import COMMON_WORDS_FILE, MP3_DIR
 _LOGGER = logging.getLogger(__name__)
 
 
+def find_usb_card_index(target_name="UACDemoV10"):
+    for idx, name in enumerate(alsaaudio.cards()):
+        _LOGGER.debug(f"Found card {name} at index {idx}")
+        if target_name in name:
+            return idx
+    raise Exception(f"Could not find USB card with name containing {target_name}")
+
+
 class AlsaMixer:
-    def __init__(self, mixer_name="PCM", cardindex=1):
-        self.mixer = alsaaudio.Mixer("PCM", cardindex=1)
+    def __init__(self, mixer_name="PCM"):
+        # Validate the card index
+        cardindex = find_usb_card_index()
+        self.mixer = alsaaudio.Mixer(mixer_name, cardindex=cardindex)
         self.volume = self.getvolume()
     
     def getvolume(self):
@@ -30,7 +40,7 @@ class AlsaMixer:
 
 class GoogleTTS:
     def __init__(self, led_strip, language="fr"):
-        self._language = language[:2]
+        self._language = language
         self.led_strip = led_strip
 
     def set_voice(self, language):
@@ -69,13 +79,14 @@ class PygameMP3Player:
         self.load_common_words()
 
         try:
-            # Check if audio devices are available
-            if len(alsaaudio.cards()) == 0:
-                raise Exception("No ALSA audio devices found.")
+            cardindex = find_usb_card_index()
+            if cardindex is None:
+                raise Exception("USB card is not available.")
 
             pygame.init()
             self.player = pygame.mixer
             self.player.init()
+            _LOGGER.debug(f"Player initialized")
         except pygame.error as e:
             _LOGGER.error(f"Failed to initialize Pygame audio: {e}")
             raise

@@ -3,11 +3,29 @@ import logging
 import sys
 
 from evdev import InputDevice, categorize, ecodes
+from num2words import num2words as n2w
 
 from talking_keyboard.audio import AlsaMixer, GoogleTTS, PygameMP3Player
 from talking_keyboard.const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
+
+SWISS = {
+    "soixante-dix": "septante",
+    "soixante et onze": "septante et un",
+    "soixante-douze": "septante-deux",
+    "soixante-treize": "septante-trois",
+    "soixante-quatorze": "septante-quatre",
+    "soixante-quinze": "septante-cinq",
+    "soixante-seize": "septante-six",
+    "quatre-vingt-dix": "nonante",
+    "quatre-vingt-onze": "nonante et un",
+    "quatre-vingt-douze": "nonante-deux",
+    "quatre-vingt-treize": "nonante-trois",
+    "quatre-vingt-quatorze": "nonante-quatre",
+    "quatre-vingt-quinze": "nonante-cinq",
+    "quatre-vingt-seize": "nonante-six"
+}
 
 
 class Keyboard:
@@ -80,11 +98,26 @@ class Keyboard:
                     _LOGGER.error("Error processing key: %s", str(key_event.keycode))
                     _LOGGER.error(e)
 
+    def process_swiss(self) -> None:
+        try:
+            word = int(self.word)
+            word = n2w(word, lang="fr")
+            for k,v in SWISS.items():
+                word = word.replace(k, v)
+            self.word = word
+            _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
+    
+        except ValueError:
+            return 
+
     def process_letter(self, _letter: str, print=True) -> None:
         if _letter in {"\n", " ", "\r"}:
             if self.word == "exitnowarn":
                 logging.warn("Exit the script")
                 sys.exit(0)
+            self.process_swiss()
+            if self.word in SWISS.keys():
+                self.word = SWISS[self.word]
             if self.word:
                 _LOGGER.info("playing word: %s", self.word)
                 self.led_strip.light_up(self.led_strip.OFF)
