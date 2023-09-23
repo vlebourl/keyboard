@@ -3,33 +3,27 @@ import logging
 import sys
 
 from evdev import InputDevice, categorize, ecodes
-
+from num2words import num2words as n2w
 from talking_keyboard.audio import AlsaMixer, GoogleTTS, PygameMP3Player
 from talking_keyboard.const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
 SWISS = {
-    "70": "septante",
-    "71": "septante et un",
-    "72": "septante-deux",
-    "73": "septante-trois",
-    "74": "septante-quatre",
-    "75": "septante-cinq",
-    "76": "septante-six",
-    "77": "septante-sept",
-    "78": "septante-huit",
-    "79": "septante-neuf",
-    "90": "nonante",
-    "91": "nonante et un",
-    "92": "nonante-deux",
-    "93": "nonante-trois",
-    "94": "nonante-quatre",
-    "95": "nonante-cinq",
-    "96": "nonante-six",
-    "97": "nonante-sept",
-    "98": "nonante-huit",
-    "99": "nonante-neuf"
+    "soixante-dix": "septante",
+    "soixante et onze": "septante et un",
+    "soixante-douze": "septante-deux",
+    "soixante-treize": "septante-trois",
+    "soixante-quatorze": "septante-quatre",
+    "soixante-quinze": "septante-cinq",
+    "soixante-seize": "septante-six",
+    "quatre-vingt-dix": "nonante",
+    "quatre-vingt-onze": "nonante et un",
+    "quatre-vingt-douze": "nonante-deux",
+    "quatre-vingt-treize": "nonante-trois",
+    "quatre-vingt-quatorze": "nonante-quatre",
+    "quatre-vingt-quinze": "nonante-cinq",
+    "quatre-vingt-seize": "nonante-six"
 }
 
 
@@ -106,25 +100,10 @@ class Keyboard:
     def process_swiss(self) -> None:
         try:
             word = int(self.word)
-            if self.word in SWISS.keys():
-                self.word = SWISS[self.word]
-                _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
-                return
-    
-            parts = []
-            while word:
-                segment = word % 1000  # Extract last three digits
-                word = word // 1000  # Remove last three digits
-    
-                last_two_digits = segment % 100  # Extract last two digits of the segment
-                if str(last_two_digits) in SWISS.keys():
-                    swiss_version = SWISS[str(last_two_digits)]
-                    first_digit = segment // 100  # Extract the first digit of the segment
-                    parts.insert(0, f"{first_digit}{swiss_version}")
-                else:
-                    parts.insert(0, str(segment))
-    
-            self.word = '-'.join(parts)
+            word = n2w(word, lang="fr")
+            for k,v in SWISS.items():
+                word = word.replace(k, v)
+            self.word = word
             _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
     
         except ValueError:
