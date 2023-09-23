@@ -40,7 +40,7 @@ class AlsaMixer:
 
 class GoogleTTS:
     def __init__(self, led_strip, language="fr"):
-        self._language = language[:2]
+        self._language = language
         self.led_strip = led_strip
 
     def set_voice(self, language):

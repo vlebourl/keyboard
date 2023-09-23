@@ -9,6 +9,29 @@ from talking_keyboard.const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
+SWISS = {
+    "70": "septante",
+    "71": "septante et un",
+    "72": "septante-deux",
+    "73": "septante-trois",
+    "74": "septante-quatre",
+    "75": "septante-cinq",
+    "76": "septante-six",
+    "77": "septante-sept",
+    "78": "septante-huit",
+    "79": "septante-neuf",
+    "90": "nonante",
+    "91": "nonante et un",
+    "92": "nonante-deux",
+    "93": "nonante-trois",
+    "94": "nonante-quatre",
+    "95": "nonante-cinq",
+    "96": "nonante-six",
+    "97": "nonante-sept",
+    "98": "nonante-huit",
+    "99": "nonante-neuf"
+}
+
 
 class Keyboard:
     def __init__(self, led_strip, lcd):
@@ -80,11 +103,30 @@ class Keyboard:
                     _LOGGER.error("Error processing key: %s", str(key_event.keycode))
                     _LOGGER.error(e)
 
+    def process_swiss(self) -> None:
+        try:
+            word = int(self.word)
+            if self.word in SWISS.keys():
+                self.word = SWISS[self.word]
+                _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
+                return
+            if word > 99:
+                preword = 100 * (int( word / 100))
+                postword = str(word - preword)
+                if postword in SWISS.keys():
+                    self.word = f"{preword}-{SWISS[postword]}"
+                    _LOGGER.debug(f"found a Swiss number, converting to {self.word}")
+        except ValueError:
+            return 
+
     def process_letter(self, _letter: str, print=True) -> None:
         if _letter in {"\n", " ", "\r"}:
             if self.word == "exitnowarn":
                 logging.warn("Exit the script")
                 sys.exit(0)
+            self.process_swiss()
+            if self.word in SWISS.keys():
+                self.word = SWISS[self.word]
             if self.word:
                 _LOGGER.info("playing word: %s", self.word)
                 self.led_strip.light_up(self.led_strip.OFF)
