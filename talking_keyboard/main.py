@@ -6,10 +6,9 @@ import sys
 import threading
 import time
 
-from talking_keyboard.const import COMMON_LETTERS, KEY_MAP
-from talking_keyboard.keyboard import Keyboard
-from talking_keyboard.lcd import LCDDisplay
-from talking_keyboard.led import LEDStrip
+from const import COMMON_LETTERS, KEY_MAP
+from keyboard import Keyboard
+from lcd import LCDDisplay
 
 
 def parse_arguments():
@@ -38,9 +37,9 @@ logging.basicConfig(
 
 _LOGGER = logging.getLogger(__name__)
 
-if os.geteuid() != 0:
-    _LOGGER.error("This script must be run with sudo privileges.")
-    sys.exit(1)
+# if os.geteuid() != 0:
+#     _LOGGER.error("This script must be run with sudo privileges.")
+#     sys.exit(1)
 
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
@@ -78,16 +77,7 @@ def get_user_input(prompt, lcd):
     return user_input
 
 if __name__ == "__main__":
-    with LEDStrip() as led_strip:
-        led_strip.flash(led_strip.WHITE)
         _LOGGER.info("Starting talking keyboard")
-        green_thread = threading.Thread(
-            target=led_strip.running_leds,
-            args=(led_strip.GREEN, 0.1, led_strip.green_thread_event),
-            daemon=True,
-        )
-        green_thread.start()
-        time.sleep(2)
         # Initialize LCD
         lcd = LCDDisplay()
 
@@ -104,7 +94,7 @@ if __name__ == "__main__":
             time.sleep(2)
             
         lcd.write_words("wifi OK", "")
-        keyboard = Keyboard(led_strip=led_strip, lcd=lcd)
+        keyboard = Keyboard(lcd=lcd)
 
         _LOGGER.info("Preloading common letters")
         for letter in COMMON_LETTERS:
@@ -124,13 +114,6 @@ if __name__ == "__main__":
             target=keyboard.player.periodic_save, args=(300,), daemon=True
         )
         save_thread.start()
-        led_strip.stop_green_thread(green_thread)
-        led_strip.light_up(led_strip.OFF)
-        for v in led_strip.generate_color_map(KEY_MAP).values():
-            led_strip.light_up(v)
-            time.sleep(0.05)
-        led_strip.flash(led_strip.GREEN)
-        led_strip.light_up(led_strip.OFF)
 
         keyboard.lcd.lcd.clear()
         keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]

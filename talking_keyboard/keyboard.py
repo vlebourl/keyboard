@@ -4,27 +4,24 @@ import sys
 
 from evdev import InputDevice, categorize, ecodes
 
-from talking_keyboard.audio import AlsaMixer, GoogleTTS, PygameMP3Player
-from talking_keyboard.const import KEY_MAP
+from audio import AlsaMixer, GoogleTTS, PygameMP3Player
+from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Keyboard:
-    def __init__(self, led_strip, lcd):
-        self.led_strip = led_strip
-        self.COLOR_MAP = self.led_strip.generate_color_map(KEY_MAP)
+    def __init__(self, lcd):
         _device_paths = glob.glob("/dev/input/by-id/*kbd*")
         if not _device_paths:
             _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
         if not _device_paths:
-            self.led_stripflash()
             raise ValueError("No keyboard device found!")
         self.device = InputDevice(_device_paths[0])
         self.mixer = AlsaMixer()
 
         self.mixer.set_volume(0 if logging.root.level == logging.DEBUG else 100)
-        self.tts = GoogleTTS(led_strip)
+        self.tts = GoogleTTS()
         self.player = PygameMP3Player(self.tts)
 
         self.word = ""
@@ -76,7 +73,6 @@ class Keyboard:
                     else:
                         _LOGGER.warning("Unsupported key: %s", key_event.keycode)
                 except TypeError as e:
-                    self.led_strip.flash(self.led_strip.RED)
                     _LOGGER.error("Error processing key: %s", str(key_event.keycode))
                     _LOGGER.error(e)
 
@@ -87,7 +83,6 @@ class Keyboard:
                 sys.exit(0)
             if self.word:
                 _LOGGER.info("playing word: %s", self.word)
-                self.led_strip.light_up(self.led_strip.OFF)
                 self.player.open_mp3_string_and_play(self.word)
                 if print:
                     self.lcd.write_words(self.word.upper(), "")
@@ -97,8 +92,6 @@ class Keyboard:
         if not _letter.isalnum():
             return
         _LOGGER.debug("Got letter: %s", _letter)
-        _LOGGER.debug("lighting up: %s", str(self.COLOR_MAP[_letter]))
-        self.led_strip.light_up(self.COLOR_MAP[_letter])
 
         self.word += _letter
         self.lcd.add_letter(_letter.upper())
@@ -112,5 +105,4 @@ class Keyboard:
                 self.process_letter(_letter)
                 _letter = self.get_one_letter()
             except Exception as e:
-                self.led_strip.flash(self.led_strip.RED)
                 _LOGGER.error("Critical Exception: %s", e)

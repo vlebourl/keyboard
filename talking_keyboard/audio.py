@@ -10,14 +10,14 @@ import pygame
 import requests
 from gtts import gTTS
 
-from talking_keyboard.const import COMMON_WORDS_FILE, MP3_DIR
+from const import COMMON_WORDS_FILE, MP3_DIR
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class AlsaMixer:
     def __init__(self, mixer_name="PCM", cardindex=1):
-        self.mixer = alsaaudio.Mixer("PCM", cardindex=1)
+        self.mixer = alsaaudio.Mixer("PCM", cardindex=3)
         self.volume = self.getvolume()
     
     def getvolume(self):
@@ -29,9 +29,8 @@ class AlsaMixer:
 
 
 class GoogleTTS:
-    def __init__(self, led_strip, language="fr"):
+    def __init__(self, language="fr"):
         self._language = language[:2]
-        self.led_strip = led_strip
 
     def set_voice(self, language):
         self._language = language[:2]
@@ -53,7 +52,6 @@ class GoogleTTS:
                         text,
                         retries,
                     )
-                    self.led_strip.flash(self.led_strip.RED)
                     return None
         return None
 
