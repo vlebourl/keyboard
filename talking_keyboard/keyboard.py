@@ -3,18 +3,24 @@ import logging
 import sys
 
 from evdev import InputDevice, categorize, ecodes
-
+from num2words import num2words
+import re
 from audio import AlsaMixer, GoogleTTS, PygameMP3Player
 from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
 
+def split_alpha_num(word):
+    # Regular expression to match sequences of letters or digits
+    return re.findall(r'[A-Za-z]+|\d+', word)
+
 class Keyboard:
     def __init__(self, lcd):
         _device_paths = glob.glob("/dev/input/by-id/*kbd*")
         if not _device_paths:
-            _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
+            _device_paths = glob.glob("/dev/input/by-id/*ogitech*")
+            # _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
         if not _device_paths:
             raise ValueError("No keyboard device found!")
         self.device = InputDevice(_device_paths[0])
@@ -53,35 +59,48 @@ class Keyboard:
                         "",
                     ):
                         return mapped_key
-                    elif key_event.keycode == "KEY_VOLUMEUP":
-                        self.mixer.set_volume(min(self.mixer.getvolume() + 5, 100))
-                        self.lcd.write_words(f"Volume up: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
-                    elif key_event.keycode == "KEY_VOLUMEDOWN":
-                        self.mixer.set_volume(min(self.mixer.getvolume() - 5, 100))
-                        self.lcd.write_words(f"Volume down: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
-                    elif (
-                        isinstance(key_event.keycode, list)
-                        and key_event.keycode[0] == "KEY_MIN_INTERESTING"
-                    ):
-                        if self.mixer.mixer.getvolume()[0] > 0:
-                            self.mixer.volume = self.mixer.getvolume()
-                            self.mixer.set_volume(0)
-                            self.lcd.write_words("Mute", self.lcd.get_buffer()[1])
-                        else:
-                            self.mixer.set_volume(self.mixer.volume)
-                            self.lcd.write_words("Unmute", self.lcd.get_buffer()[1])
+                  #  elif key_event.keycode == "KEY_VOLUMEUP":
+                  #      self.mixer.set_volume(min(self.mixer.getvolume() + 5, 100))
+                  #      self.lcd.write_words(f"Volume up: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
+                  #  elif key_event.keycode == "KEY_VOLUMEDOWN":
+                  #      self.mixer.set_volume(min(self.mixer.getvolume() - 5, 100))
+                  #      self.lcd.write_words(f"Volume down: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
+                  #  elif (
+                  #      isinstance(key_event.keycode, list)
+                  #      and key_event.keycode[0] == "KEY_MIN_INTERESTING"
+                  #  ):
+                  #      if self.mixer.mixer.getvolume()[0] > 0:
+                  #          self.mixer.volume = self.mixer.getvolume()
+                  #          self.mixer.set_volume(0)
+                  #          self.lcd.write_words("Mute", self.lcd.get_buffer()[1])
+                  #      else:
+                  #          self.mixer.set_volume(self.mixer.volume)
+                  #          self.lcd.write_words("Unmute", self.lcd.get_buffer()[1])
                     else:
                         _LOGGER.warning("Unsupported key: %s", key_event.keycode)
                 except TypeError as e:
                     _LOGGER.error("Error processing key: %s", str(key_event.keycode))
                     _LOGGER.error(e)
 
+    def process_numbers(self, word: str) -> str:
+        # if no digit found, return
+        if not any(char.isdigit() for char in word):
+            return word
+        words = split_alpha_num(word)
+        for i, word in enumerate(words):
+            if word.isdigit():
+                words[i] = num2words(word, lang="fr_CH")
+                words[i] = words[i].replace("huitante", "quatre-vingt").replace("vingt et un", "vingt-et-un")
+        return "".join(words)
+
     def process_letter(self, _letter: str, print=True) -> None:
         if _letter in {"\n", " ", "\r"}:
             if self.word == "exitnowarn":
                 logging.warn("Exit the script")
+                lcd.clear()
                 sys.exit(0)
             if self.word:
+                self.word = self.process_numbers(self.word)
                 _LOGGER.info("playing word: %s", self.word)
                 self.player.open_mp3_string_and_play(self.word)
                 if print:
