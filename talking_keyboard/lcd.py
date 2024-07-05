@@ -2,6 +2,7 @@ import logging
 
 try:
     from RPLCD.i2c import CharLCD
+
     lcd_available = True
 except ImportError:
     lcd_available = False
