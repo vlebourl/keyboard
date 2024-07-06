@@ -20,6 +20,8 @@ class Keyboard:
         _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob("/dev/input/by-id/*ogitech*")
         if not _device_paths:
             raise ValueError("No keyboard device found!")
+        else:
+            _LOGGER.info("Found keyboard device: %s", _device_paths[0])
         self.device = InputDevice(_device_paths[0])
         self.streamer = Streamer()
 
