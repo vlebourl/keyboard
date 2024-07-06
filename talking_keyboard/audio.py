@@ -48,6 +48,7 @@ class Streamer:
     def play(self, text):
         self.stream.start()
         for audio_bytes in self.voice.generate(text):
+            int_data = None
             int_data = np.frombuffer(audio_bytes, dtype=np.int16)
             self.stream.write(int_data)
         self.stream.stop()
