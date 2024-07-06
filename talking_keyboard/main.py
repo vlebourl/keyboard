@@ -44,7 +44,7 @@ if __name__ == "__main__":
         keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
         keyboard.process_letter("\n", False)
 
-        keyboard.lcd.lcd.clear()
+        keyboard.lcd.clear()
         keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
         keyboard.lcd._write_buffer()
 
