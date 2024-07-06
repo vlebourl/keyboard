@@ -46,7 +46,6 @@ class Streamer:
         )
 
     def play(self, text):
-        self._open_stream()  # Ensure the stream is reopened before each play call
         self.stream.start()
         generated = self.generate(text)
         for audio_bytes in generated:

@@ -1,6 +1,7 @@
 numpy
 sounddevice
 piper-tts
+onnxruntime==1.17.1
 num2words
 evdev
 pygame

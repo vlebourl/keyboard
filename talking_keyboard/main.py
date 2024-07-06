@@ -41,7 +41,7 @@ if __name__ == "__main__":
     lcd = LCDDisplay()
 
     lcd.write_words("wifi OK", "")
-    streamer = Streamer()
+    streamer = Streamer("models", "next")
     keyboard = Keyboard(path=MODEL_DIR, streamer=streamer, lcd=lcd)
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
