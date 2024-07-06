@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Streamer:
-    def __init__(self, path: str="models", model: str="fr_FR-siwis-medium"):
+    def __init__(self, path: str = "models", model: str = "fr_FR-siwis-medium"):
 
         if not os.path.exists(path):
             os.makedirs(path)
@@ -26,10 +26,6 @@ class Streamer:
             )  # nosec
 
         self.voice = PiperVoice.load(f"{path}/{model}.onnx")
-        
-        self.stream = sd.OutputStream(
-            samplerate=self.voice.config.sample_rate, channels=1, dtype="int16"
-        )
 
     # destructor, use stream.close()
     def __del__(self):
@@ -38,7 +34,15 @@ class Streamer:
     def generate(self, text):
         return self.voice.synthesize_stream_raw(text)
 
+    def _open_stream(self):
+        if self.stream is not None:
+            self.stream.close()
+        self.stream = sd.OutputStream(
+            samplerate=self.config.sample_rate, channels=1, dtype="int16"
+        )
+
     def play(self, text):
+        self._open_stream()  # Ensure the stream is reopened before each play call
         self.stream.start()
         generated = self.generate(text)
         for audio_bytes in generated:
