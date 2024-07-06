@@ -1,7 +1,7 @@
 numpy
 sounddevice
 piper-tts
-
+num2words
 evdev
 pygame
 gtts
