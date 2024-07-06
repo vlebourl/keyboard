@@ -35,9 +35,12 @@ class Streamer:
     def __del__(self):
         self.stream.close()
 
+    def generate(self, text):
+        return self.voice.synthesize_stream_raw(text)
+
     def play(self, text):
         self.stream.start()
-        generated = self.voice.synthesize_stream_raw(text)
+        generated = self.generate(text)
         for audio_bytes in generated:
             int_data = None
             int_data = np.frombuffer(audio_bytes, dtype=np.int16)
