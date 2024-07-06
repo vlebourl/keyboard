@@ -25,7 +25,7 @@ class PiperTTS:
                 f"{MODEL_DIR}/{model}.onnx",
             )  # nosec
 
-        self.voice = PiperVoice.load(model)
+        self.voice = PiperVoice.load(f"{MODEL_DIR}/{model}")
 
     @property
     def sample_rate(self):
