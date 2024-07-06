@@ -30,6 +30,7 @@ class Streamer:
             )  # nosec
 
         self.voice = PiperVoice.load(f"{path}/{model}.onnx")
+        self._open_stream()
 
     # destructor, use stream.close()
     def __del__(self):
