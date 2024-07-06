@@ -5,8 +5,8 @@ import sys
 from evdev import InputDevice, categorize, ecodes
 from num2words import num2words
 import re
-from .audio import PiperTTS, Streamer
-from .const import KEY_MAP
+from audio import Streamer
+from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 

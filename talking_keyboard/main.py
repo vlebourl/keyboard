@@ -5,7 +5,7 @@ import threading
 import time
 
 from const import COMMON_LETTERS
-from .keyboard import Keyboard
+from keyboard import Keyboard
 from lcd import LCDDisplay
 
 
