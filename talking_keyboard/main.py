@@ -3,6 +3,7 @@ import logging
 
 from keyboard import Keyboard
 from lcd import LCDDisplay
+from const import MODEL_DIR
 
 
 def parse_arguments():
@@ -34,18 +35,18 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
 if __name__ == "__main__":
-        _LOGGER.info("Starting talking keyboard")
-        # Initialize LCD
-        lcd = LCDDisplay()
-            
-        lcd.write_words("wifi OK", "")
-        keyboard = Keyboard(lcd=lcd)
+    _LOGGER.info("Starting talking keyboard")
+    # Initialize LCD
+    lcd = LCDDisplay()
 
-        keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
-        keyboard.process_letter("\n", False)
+    lcd.write_words("wifi OK", "")
+    keyboard = Keyboard(path=MODEL_DIR, lcd=lcd)
 
-        keyboard.lcd.clear()
-        keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
-        keyboard.lcd._write_buffer()
+    keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
+    keyboard.process_letter("\n", False)
 
-        keyboard.loop()
+    keyboard.lcd.clear()
+    keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
+    keyboard.lcd._write_buffer()
+
+    keyboard.loop()

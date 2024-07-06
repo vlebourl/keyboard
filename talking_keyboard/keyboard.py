@@ -13,17 +13,20 @@ _LOGGER = logging.getLogger(__name__)
 
 def split_alpha_num(word):
     # Regular expression to match sequences of letters or digits
-    return re.findall(r'[A-Za-z]+|\d+', word)
+    return re.findall(r"[A-Za-z]+|\d+", word)
+
 
 class Keyboard:
-    def __init__(self, lcd):
-        _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob("/dev/input/by-id/*ogitech*event*")
+    def __init__(self, path, lcd):
+        _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob(
+            "/dev/input/by-id/*ogitech*event*"
+        )
         if not _device_paths:
             raise ValueError("No keyboard device found!")
         else:
             _LOGGER.info("Found keyboard device: %s", _device_paths[0])
         self.device = InputDevice(_device_paths[0])
-        self.streamer = Streamer()
+        self.streamer = Streamer(path)
 
         self.word = ""
         self.shift_pressed = False
@@ -48,29 +51,14 @@ class Keyboard:
             if key_event.keystate == key_event.key_up:
                 try:
                     if mapped_key := KEY_MAP.get(
-                        key_event.keycode[0]
-                        if isinstance(key_event.keycode, list)
-                        else key_event.keycode,
+                        (
+                            key_event.keycode[0]
+                            if isinstance(key_event.keycode, list)
+                            else key_event.keycode
+                        ),
                         "",
                     ):
                         return mapped_key
-                  #  elif key_event.keycode == "KEY_VOLUMEUP":
-                  #      self.mixer.set_volume(min(self.mixer.getvolume() + 5, 100))
-                  #      self.lcd.write_words(f"Volume up: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
-                  #  elif key_event.keycode == "KEY_VOLUMEDOWN":
-                  #      self.mixer.set_volume(min(self.mixer.getvolume() - 5, 100))
-                  #      self.lcd.write_words(f"Volume down: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
-                  #  elif (
-                  #      isinstance(key_event.keycode, list)
-                  #      and key_event.keycode[0] == "KEY_MIN_INTERESTING"
-                  #  ):
-                  #      if self.mixer.mixer.getvolume()[0] > 0:
-                  #          self.mixer.volume = self.mixer.getvolume()
-                  #          self.mixer.set_volume(0)
-                  #          self.lcd.write_words("Mute", self.lcd.get_buffer()[1])
-                  #      else:
-                  #          self.mixer.set_volume(self.mixer.volume)
-                  #          self.lcd.write_words("Unmute", self.lcd.get_buffer()[1])
                     else:
                         _LOGGER.warning("Unsupported key: %s", key_event.keycode)
                 except TypeError as e:
@@ -85,7 +73,11 @@ class Keyboard:
         for i, word in enumerate(words):
             if word.isdigit():
                 words[i] = num2words(word, lang="fr_CH")
-                words[i] = words[i].replace("huitante", "quatre-vingt").replace("vingt et un", "vingt-et-un")
+                words[i] = (
+                    words[i]
+                    .replace("huitante", "quatre-vingt")
+                    .replace("vingt et un", "vingt-et-un")
+                )
         return "".join(words)
 
     def process_letter(self, _letter: str, print=True) -> None:
