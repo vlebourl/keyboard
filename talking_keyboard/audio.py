@@ -28,7 +28,7 @@ class Streamer:
         self.voice = PiperVoice.load(f"{path}/{model}.onnx")
         
         self.stream = sd.OutputStream(
-            samplerate=self.voice.sample_rate, channels=1, dtype="int16"
+            samplerate=self.voice.config.sample_rate, channels=1, dtype="int16"
         )
 
     # destructor, use stream.close()
