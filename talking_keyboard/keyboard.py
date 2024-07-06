@@ -17,7 +17,7 @@ def split_alpha_num(word):
 
 class Keyboard:
     def __init__(self, lcd):
-        _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob("/dev/input/by-id/*ogitech*")
+        _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob("/dev/input/by-id/*ogitech*event*")
         if not _device_paths:
             raise ValueError("No keyboard device found!")
         else:
