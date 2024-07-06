@@ -1,4 +1,7 @@
-pyalsaaudio
+numpy
+sounddevice
+piper-tts
+
 evdev
 pygame
 gtts
