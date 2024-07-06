@@ -18,14 +18,14 @@ class PiperTTS:
             _LOGGER.info(f"Downloading model {model} from huggingface.co")
             urlretrieve(
                 f"https://huggingface.co/rhasspy/piper-voices/resolve/main/{model[:2]}/{model.replace('-', '/')}/{model}.onnx.json",
-                f"{MODEL_DIR}/{model}.json",
+                f"{MODEL_DIR}/{model}.onnx.json",
             )  # nosec
             urlretrieve(
                 f"https://huggingface.co/rhasspy/piper-voices/resolve/main/{model[:2]}/{model.replace('-', '/')}/{model}.onnx",
                 f"{MODEL_DIR}/{model}.onnx",
             )  # nosec
 
-        self.voice = PiperVoice.load(f"{MODEL_DIR}/{model}")
+        self.voice = PiperVoice.load(f"{MODEL_DIR}/{model}.onnx")
 
     @property
     def sample_rate(self):
