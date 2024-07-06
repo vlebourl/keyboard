@@ -44,11 +44,14 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
 def check_internet_connection():
-    try:
-        response = subprocess.check_output("ping -c 1 google.com", shell=True)
-        return True
-    except subprocess.CalledProcessError:
-        return False
+    for _ in range(10):
+        try:
+            _ = subprocess.check_output("ping -c 1 google.com", shell=True)
+            return True
+        except subprocess.CalledProcessError:
+            time.sleep(1)
+            continue
+    return False
 
 def update_wpa_supplicant(ssid, psk):
     wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
