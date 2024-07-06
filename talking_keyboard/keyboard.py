@@ -5,8 +5,8 @@ import sys
 from evdev import InputDevice, categorize, ecodes
 from num2words import num2words
 import re
-from audio import AlsaMixer, GoogleTTS, PygameMP3Player
-from const import KEY_MAP
+from .audio import PiperTTS, Streamer
+from .const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,18 +17,11 @@ def split_alpha_num(word):
 
 class Keyboard:
     def __init__(self, lcd):
-        _device_paths = glob.glob("/dev/input/by-id/*kbd*")
-        if not _device_paths:
-            _device_paths = glob.glob("/dev/input/by-id/*ogitech*")
-            # _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
+        _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob("/dev/input/by-id/*ogitech*")
         if not _device_paths:
             raise ValueError("No keyboard device found!")
         self.device = InputDevice(_device_paths[0])
-        self.mixer = AlsaMixer()
-
-        self.mixer.set_volume(0 if logging.root.level == logging.DEBUG else 100)
-        self.tts = GoogleTTS()
-        self.player = PygameMP3Player(self.tts)
+        self.streamer = Streamer()
 
         self.word = ""
         self.shift_pressed = False
@@ -97,12 +90,12 @@ class Keyboard:
         if _letter in {"\n", " ", "\r"}:
             if self.word == "exitnowarn":
                 logging.warn("Exit the script")
-                lcd.clear()
+                self.lcd.clear()
                 sys.exit(0)
             if self.word:
                 self.word = self.process_numbers(self.word)
                 _LOGGER.info("playing word: %s", self.word)
-                self.player.open_mp3_string_and_play(self.word)
+                self.streamer.play(self.word)
                 if print:
                     self.lcd.write_words(self.word.upper(), "")
                 self.word = ""
@@ -114,7 +107,7 @@ class Keyboard:
 
         self.word += _letter
         self.lcd.add_letter(_letter.upper())
-        self.player.open_mp3_string_and_play(f" {_letter} ")
+        self.streamer.play(f" {_letter} ")
 
     def loop(self):
         _LOGGER.debug("Starting main loop")
