@@ -10,6 +10,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Streamer:
+
+    stream = None
+    voice = None
+
     def __init__(self, path: str = "models", model: str = "fr_FR-siwis-medium"):
 
         if not os.path.exists(path):
