@@ -55,3 +55,4 @@ KEY_MAP = {
     # Add other keys as needed
 }
 MP3_DIR = "sounds"
+MODEL_DIR = "models"
