@@ -1,13 +1,11 @@
 import argparse
 import logging
-import os
 import subprocess
-import sys
 import threading
 import time
 
-from const import COMMON_LETTERS, KEY_MAP
-from keyboard import Keyboard
+from const import COMMON_LETTERS
+from .keyboard import Keyboard
 from lcd import LCDDisplay
 
 
