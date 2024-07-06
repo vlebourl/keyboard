@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Streamer:
-    def __init__(self, path: str, model: str="fr_FR-siwis-medium"):
+    def __init__(self, path: str="models", model: str="fr_FR-siwis-medium"):
 
         if not os.path.exists(path):
             os.makedirs(path)

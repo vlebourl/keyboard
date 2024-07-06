@@ -5,7 +5,6 @@ import sys
 from evdev import InputDevice, categorize, ecodes
 from num2words import num2words
 import re
-from audio import Streamer
 from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ def split_alpha_num(word):
 
 
 class Keyboard:
-    def __init__(self, path, lcd):
+    def __init__(self, streamer, lcd):
         _device_paths = glob.glob("/dev/input/by-id/*kbd*") or glob.glob(
             "/dev/input/by-id/*ogitech*event*"
         )
@@ -26,7 +25,7 @@ class Keyboard:
         else:
             _LOGGER.info("Found keyboard device: %s", _device_paths[0])
         self.device = InputDevice(_device_paths[0])
-        self.streamer = Streamer(path)
+        self.streamer = streamer
 
         self.word = ""
         self.shift_pressed = False

@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from keyboard import Keyboard
+from audio import Streamer
 from lcd import LCDDisplay
 from const import MODEL_DIR
 
@@ -40,7 +41,8 @@ if __name__ == "__main__":
     lcd = LCDDisplay()
 
     lcd.write_words("wifi OK", "")
-    keyboard = Keyboard(path=MODEL_DIR, lcd=lcd)
+    streamer = Streamer()
+    keyboard = Keyboard(path=MODEL_DIR, streamer=streamer, lcd=lcd)
 
     keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
     keyboard.process_letter("\n", False)
