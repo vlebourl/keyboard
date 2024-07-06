@@ -42,7 +42,7 @@ class Streamer:
         if self.stream is not None:
             self.stream.close()
         self.stream = sd.OutputStream(
-            samplerate=self.config.sample_rate, channels=1, dtype="int16"
+            samplerate=self.voice.config.sample_rate, channels=1, dtype="int16"
         )
 
     def play(self, text):
