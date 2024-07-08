@@ -1,3 +1,4 @@
+import hashlib
 import io
 import logging
 import os
@@ -7,7 +8,7 @@ import requests
 import sounddevice as sd
 from gtts import gTTS
 from piper.voice import PiperVoice
-
+from const import BASE_URL, SOUND_DIR
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -67,7 +68,7 @@ class PiperTTS:
             os.makedirs(path)
         if not os.path.exists(f"{path}/{model}.onnx.json"):
             _LOGGER.info(f"Downloading model {model} from huggingface.co")
-            base_url = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
+            base_url = BASE_URL
             model_url_base = f"{base_url}/{model[:2]}/{model.replace('-', '/')}"
             download_file(
                 f"{model_url_base}/{model}.onnx.json", f"{path}/{model}.onnx.json"
@@ -84,7 +85,10 @@ class PiperTTS:
 
 
 class Streamer:
-    def __init__(self, sample_rate=22050):
+    def __init__(self, sample_rate=22050, cache_dir="tts_cache"):
+        self.cache_dir = cache_dir
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
         if check_internet():
             self.tts = GoogleTTS("fr")
             self._sample_rate = sample_rate
@@ -97,16 +101,28 @@ class Streamer:
 
     # Destructor, use stream.close()
     def __del__(self):
-        self.stream.close()
+        if self.stream is not None:
+            self.stream.close()
+
+    def _get_file_path(self, text):
+        # Create a hash of the text to use as a filename
+        text_hash = hashlib.md5(text.encode(), usedforsecurity=False).hexdigest()
+        return os.path.join(self.cache_dir, f"{SOUND_DIR}/{text_hash}.wav")
+
+    def generate_to_file(self, text):
+        file_path = self._get_file_path(text)
+        if not os.path.exists(file_path):
+            if audio_data := self.tts.generate(text):
+                with open(file_path, "wb") as f:
+                    f.write(audio_data)
+        return file_path
 
     def play(self, text):
-        self.stream.start()
-        if generated := self.tts.generate(text):
-            if isinstance(generated, bytes):  # GoogleTTS case
-                int_data = np.frombuffer(generated, dtype=np.int16)
+        audio_file = self.generate_to_file(text)
+        if audio_file and os.path.exists(audio_file):
+            self.stream.start()
+            with open(audio_file, "rb") as f:
+                data = f.read()
+                int_data = np.frombuffer(data, dtype=np.int16)
                 self.stream.write(int_data)
-            else:  # PiperTTS case
-                for audio_bytes in generated:
-                    int_data = np.frombuffer(audio_bytes, dtype=np.int16)
-                    self.stream.write(int_data)
-        self.stream.stop()
+            self.stream.stop()

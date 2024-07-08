@@ -54,5 +54,6 @@ KEY_MAP = {
     "KEY_KP9": "9",
     # Add other keys as needed
 }
-MP3_DIR = "sounds"
+SOUND_DIR = "sounds"
 MODEL_DIR = "models"
+BASE_URL = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
