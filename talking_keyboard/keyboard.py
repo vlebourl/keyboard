@@ -1,11 +1,11 @@
 import glob
 import logging
+import re
 import sys
 
+from const import KEY_MAP
 from evdev import InputDevice, categorize, ecodes
 from num2words import num2words
-import re
-from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 

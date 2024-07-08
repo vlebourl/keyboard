@@ -1,10 +1,10 @@
 import argparse
 import logging
 
-from keyboard import Keyboard
 from audio import Streamer
-from lcd import LCDDisplay
 from const import MODEL_DIR
+from keyboard import Keyboard
+from lcd import LCDDisplay
 
 
 def parse_arguments():

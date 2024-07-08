@@ -1,11 +1,12 @@
 numpy
 sounddevice
-piper-tts
+piper-tts==1.2.0
 onnxruntime==1.17.1
 num2words
 evdev
 pygame
 gtts
 requests
-rpi_ws281x
 RPLCD
+requests
+gtts
