@@ -6,9 +6,10 @@ import os
 import numpy as np
 import requests
 import sounddevice as sd
+from const import BASE_URL, SOUND_DIR
 from gtts import gTTS
 from piper.voice import PiperVoice
-from const import BASE_URL, SOUND_DIR
+
 _LOGGER = logging.getLogger(__name__)
 
 
