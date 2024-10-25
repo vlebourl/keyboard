@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class AlsaMixer:
     def __init__(self, mixer_name="PCM", cardindex=1):
-        self.mixer = alsaaudio.Mixer("PCM", cardindex=3)
+        self.mixer = alsaaudio.Mixer('Headphone', cardindex=3)
         self.volume = self.getvolume()
     
     def getvolume(self):

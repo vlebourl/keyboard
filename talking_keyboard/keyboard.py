@@ -23,7 +23,7 @@ class Keyboard:
             # _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
         if not _device_paths:
             raise ValueError("No keyboard device found!")
-        self.device = InputDevice(_device_paths[0])
+        self.device = InputDevice(_device_paths[1])
         self.mixer = AlsaMixer()
 
         self.mixer.set_volume(0 if logging.root.level == logging.DEBUG else 100)
@@ -91,10 +91,10 @@ class Keyboard:
             if word.isdigit():
                 words[i] = num2words(word, lang="fr_CH")
                 words[i] = words[i].replace("huitante", "quatre-vingt").replace("vingt et un", "vingt-et-un")
-        return "".join(words)
+        return " ".join(words)
 
     def process_letter(self, _letter: str, print=True) -> None:
-        if _letter in {"\n", " ", "\r"}:
+        if _letter in {"\n", "\r"}:
             if self.word == "exitnowarn":
                 logging.warn("Exit the script")
                 lcd.clear()
