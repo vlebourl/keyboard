@@ -115,8 +115,9 @@ if __name__ == "__main__":
         )
         save_thread.start()
 
-        keyboard.lcd.lcd.clear()
-        keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
-        keyboard.lcd._write_buffer()
+        if keyboard.lcd.lcd:
+            keyboard.lcd.lcd.clear()
+            keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
+            keyboard.lcd._write_buffer()
 
         keyboard.loop()

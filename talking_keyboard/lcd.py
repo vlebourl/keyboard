@@ -16,14 +16,17 @@ class LCDDisplay:
 
     def __init__(self):
         if lcd_available:
-            self.lcd = CharLCD(
-                i2c_expander="PCF8574",
-                address=0x27,
-                port=1,
-                cols=self.COLS,
-                rows=self.ROWS,
-                dotsize=8,
-            )
+            try:
+                self.lcd = CharLCD(
+                    i2c_expander="PCF8574",
+                    address=0x27,
+                    port=1,
+                    cols=self.COLS,
+                    rows=self.ROWS,
+                    dotsize=8,
+                )
+            except OSError:
+                self.lcd = None
         else:
             self.lcd = None
         self.buffer = ["", ""]
