@@ -2,10 +2,10 @@ import logging
 import re
 import sys
 
-from audio import GoogleTTS, PygameMP3Player  # AlsaMixer,
-from const import COMMON_LETTERS
 from num2words import num2words
 
+from audio import PygameMP3Player
+from const import COMMON_LETTERS
 from keyboard import Keyboard
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,10 +16,7 @@ class Loop:
 
     def __init__(self):
         self.keyboard = Keyboard()
-        # self._mixer = AlsaMixer()
-        # self._mixer.set_volume(0 if logging.root.level == logging.DEBUG else 100)
-        self._tts = GoogleTTS()
-        self.player = PygameMP3Player(self._tts)
+        self.player = PygameMP3Player()
 
     def process_numbers(self, word: str) -> str:
         # if no digit found, return

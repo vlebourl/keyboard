@@ -1,8 +1,9 @@
 import glob
 import logging
 
-from const import KEY_MAP
 from evdev import InputDevice, categorize, ecodes
+
+from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 

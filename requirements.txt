@@ -1,6 +1,5 @@
-num2words
-pyalsaaudio
 evdev
-pygame
 gtts
+num2words
+pygame
 requests

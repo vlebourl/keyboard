@@ -14,7 +14,6 @@ setup(
         ],
     },
     install_requires=[
-        "pyalsaaudio",
         "evdev",
         "pygame",
         "gtts",
