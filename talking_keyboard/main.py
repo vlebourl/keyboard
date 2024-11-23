@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     wifi = check_internet_connection()
     if not wifi:
-        _LOGGER.error("No internet connexion for TTS")
+        _LOGGER.error("No internet connection for TTS")
         exit
 
     # Check internet connection
