@@ -1,7 +1,9 @@
 import argparse
 import logging
+import requests
 import subprocess
 import threading
+
 
 from loop import Loop
 
@@ -34,11 +36,12 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
 
-def check_internet_connection():
+def check_internet(url="https://www.google.com", timeout=5):
     try:
-        _ = subprocess.check_output("ping -c 1 google.com", shell=True)
-        return True
-    except subprocess.CalledProcessError:
+        response = requests.get(url, timeout=timeout)
+        # Ensure the request was successful
+        return response.status_code == 200
+    except requests.ConnectionError:
         return False
 
 
@@ -70,7 +73,7 @@ def get_user_input(prompt):
 if __name__ == "__main__":
     _LOGGER.info("Starting talking keyboard")
 
-    wifi = check_internet_connection()
+    wifi = check_internet()
     if not wifi:
         _LOGGER.error("No internet connection for TTS")
         exit
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     #     psk = get_user_input("wifi PSK:")
     #     update_wpa_supplicant(ssid, psk)
     #     time.sleep(5)
-    #     wifi = check_internet_connection()
+    #     wifi = check_internet()
     #     time.sleep(2)
 
     loop = Loop()
