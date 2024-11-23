@@ -1,6 +1,6 @@
 import logging
 
-from const import KEY_MAP, DIGITS_MAP
+from const import DIGITS_MAP, KEY_MAP
 from pynput import keyboard
 
 _LOGGER = logging.getLogger(__name__)
