@@ -8,7 +8,6 @@ import time
 
 from const import COMMON_LETTERS, KEY_MAP
 from keyboard import Keyboard
-from lcd import LCDDisplay
 
 
 def parse_arguments():
@@ -59,8 +58,7 @@ def update_wpa_supplicant(ssid, psk):
     subprocess.call(["sudo", "systemctl", "daemon-reload"])
     subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
 
-def get_user_input(prompt, lcd):
-    lcd.write_words(prompt, "")
+def get_user_input(prompt):
     user_input = ""
 
     while True:
@@ -69,32 +67,26 @@ def get_user_input(prompt, lcd):
             break
         elif char == '\b':
             user_input = user_input[:-1]
-            lcd.write_words(prompt, user_input)
         elif char:
             user_input += char
-            lcd.add_letter(char)
 
     return user_input
 
 if __name__ == "__main__":
         _LOGGER.info("Starting talking keyboard")
-        # Initialize LCD
-        lcd = LCDDisplay()
 
         wifi = check_internet_connection()
         # Check internet connection
         while not wifi:
-            lcd.write_words("No wifi", "")
             time.sleep(2)
-            ssid = get_user_input("wifi SSID:", lcd)
-            psk = get_user_input("wifi PSK:", lcd)
+            ssid = get_user_input("wifi SSID:")
+            psk = get_user_input("wifi PSK:")
             update_wpa_supplicant(ssid, psk)
             time.sleep(5)
             wifi = check_internet_connection()
             time.sleep(2)
             
-        lcd.write_words("wifi OK", "")
-        keyboard = Keyboard(lcd=lcd)
+        keyboard = Keyboard()
 
         _LOGGER.info("Preloading common letters")
         for letter in COMMON_LETTERS:
@@ -114,10 +106,5 @@ if __name__ == "__main__":
             target=keyboard.player.periodic_save, args=(300,), daemon=True
         )
         save_thread.start()
-
-        if keyboard.lcd.lcd:
-            keyboard.lcd.lcd.clear()
-            keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
-            keyboard.lcd._write_buffer()
 
         keyboard.loop()

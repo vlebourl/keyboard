@@ -20,7 +20,6 @@ setup(
         "gtts",
         "requests",
         "rpi_ws281x",
-        "RPLCD",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

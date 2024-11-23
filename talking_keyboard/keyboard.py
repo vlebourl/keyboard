@@ -16,7 +16,7 @@ def split_alpha_num(word):
     return re.findall(r'[A-Za-z]+|\d+', word)
 
 class Keyboard:
-    def __init__(self, lcd):
+    def __init__(self):
         _device_paths = glob.glob("/dev/input/by-id/*kbd*")
         if not _device_paths:
             _device_paths = glob.glob("/dev/input/by-id/*ogitech*")
@@ -33,7 +33,6 @@ class Keyboard:
         self.word = ""
         self.shift_pressed = False
         self.caps_lock = False
-        self.lcd = lcd
 
     def update_key_states(self, key_event):
         if key_event.keycode in ["KEY_LEFTSHIFT", "KEY_RIGHTSHIFT"]:
@@ -61,10 +60,8 @@ class Keyboard:
                         return mapped_key
                   #  elif key_event.keycode == "KEY_VOLUMEUP":
                   #      self.mixer.set_volume(min(self.mixer.getvolume() + 5, 100))
-                  #      self.lcd.write_words(f"Volume up: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
                   #  elif key_event.keycode == "KEY_VOLUMEDOWN":
                   #      self.mixer.set_volume(min(self.mixer.getvolume() - 5, 100))
-                  #      self.lcd.write_words(f"Volume down: {self.mixer.getvolume()}", self.lcd.get_buffer()[1])
                   #  elif (
                   #      isinstance(key_event.keycode, list)
                   #      and key_event.keycode[0] == "KEY_MIN_INTERESTING"
@@ -72,10 +69,8 @@ class Keyboard:
                   #      if self.mixer.mixer.getvolume()[0] > 0:
                   #          self.mixer.volume = self.mixer.getvolume()
                   #          self.mixer.set_volume(0)
-                  #          self.lcd.write_words("Mute", self.lcd.get_buffer()[1])
                   #      else:
                   #          self.mixer.set_volume(self.mixer.volume)
-                  #          self.lcd.write_words("Unmute", self.lcd.get_buffer()[1])
                     else:
                         _LOGGER.warning("Unsupported key: %s", key_event.keycode)
                 except TypeError as e:
@@ -93,18 +88,15 @@ class Keyboard:
                 words[i] = words[i].replace("huitante", "quatre-vingt").replace("vingt et un", "vingt-et-un")
         return " ".join(words)
 
-    def process_letter(self, _letter: str, print=True) -> None:
+    def process_letter(self, _letter: str) -> None:
         if _letter in {"\n", "\r"}:
             if self.word == "exitnowarn":
-                logging.warn("Exit the script")
-                lcd.clear()
+                logging.warning("Exit the script")
                 sys.exit(0)
             if self.word:
                 self.word = self.process_numbers(self.word)
                 _LOGGER.info("playing word: %s", self.word)
                 self.player.open_mp3_string_and_play(self.word)
-                if print:
-                    self.lcd.write_words(self.word.upper(), "")
                 self.word = ""
             return
         _letter = _letter.lower()
@@ -113,7 +105,6 @@ class Keyboard:
         _LOGGER.debug("Got letter: %s", _letter)
 
         self.word += _letter
-        self.lcd.add_letter(_letter.upper())
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
     def loop(self):
