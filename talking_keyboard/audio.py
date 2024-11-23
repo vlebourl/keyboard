@@ -8,9 +8,8 @@ import time
 # import alsaaudio
 import pygame
 import requests
-from gtts import gTTS
-
 from const import COMMON_WORDS_FILE, MP3_DIR
+from gtts import gTTS
 
 _LOGGER = logging.getLogger(__name__)
 

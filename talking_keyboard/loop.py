@@ -2,10 +2,10 @@ import logging
 import re
 import sys
 
-from num2words import num2words
-
 from audio import GoogleTTS, PygameMP3Player  # AlsaMixer,
 from const import COMMON_LETTERS
+from num2words import num2words
+
 from keyboard import Keyboard
 
 _LOGGER = logging.getLogger(__name__)
