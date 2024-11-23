@@ -1,7 +1,6 @@
 import argparse
 import logging
 import requests
-import subprocess
 import threading
 
 
