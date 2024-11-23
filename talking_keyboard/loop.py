@@ -45,7 +45,7 @@ class Loop:
             return
         _LOGGER.debug("Got letter: %s", _letter)
         self.word += _letter
-        _letter = "espace" if _letter == " " else _letter
+        _letter = "space" if _letter == " " else _letter
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
     def process_word(self):
