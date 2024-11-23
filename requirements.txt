@@ -1,5 +1,6 @@
-evdev
+
 gtts
 num2words
 pygame
 requests
+pynput
