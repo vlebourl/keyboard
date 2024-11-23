@@ -16,7 +16,8 @@ class Keyboard:
                 # _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
             if not _device_paths:
                 raise ValueError("No keyboard device found!")
-            path = _device_paths[1]
+            path = _device_paths[min(1, len(_device_paths))]
+
         self.device = InputDevice(path)
         self.shift_pressed = False
         self.caps_lock = False
