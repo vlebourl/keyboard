@@ -1,9 +1,8 @@
 import argparse
 import logging
-import requests
 import threading
 
-
+import requests
 from loop import Loop
 
 
