@@ -1,6 +1,6 @@
+num2words
 pyalsaaudio
 evdev
 pygame
 gtts
 requests
-rpi_ws281x
