@@ -42,7 +42,7 @@ class GoogleTTS:
 
 
 class PygameMP3Player:
-    def __init__(self, tts):
+    def __init__(self):
         if not os.path.exists(MP3_DIR):
             os.makedirs(MP3_DIR)
         self.tts = GoogleTTS()
