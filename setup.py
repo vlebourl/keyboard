@@ -14,10 +14,11 @@ setup(
         ],
     },
     install_requires=[
-        "evdev",
-        "pygame",
         "gtts",
+        "num2words",
+        "pygame",
         "requests",
+        "pynput",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
