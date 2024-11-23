@@ -10,10 +10,11 @@ _LOGGER = logging.getLogger(__name__)
 class Keyboard:
     def __init__(self, path=None):
         if path is None:
-            _device_paths = glob.glob("/dev/input/by-id/*kbd*")
-            if not _device_paths:
-                _device_paths = glob.glob("/dev/input/by-id/*ogitech*")
-                # _device_paths = glob.glob("/dev/input/by-id/*keyboard*")
+            _device_paths = (
+                glob.glob("/dev/input/by-id/*kbd*")
+                or glob.glob("/dev/input/by-id/*ogitech*")
+                or glob.glob("/dev/input/by-id/*keyboard*")
+            )
             if not _device_paths:
                 raise ValueError("No keyboard device found!")
             path = _device_paths[min(1, len(_device_paths))]
