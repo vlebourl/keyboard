@@ -1,7 +1,7 @@
 import logging
 
 from const import KEY_MAP
-from evdev import InputDevice, categorize, ecodes
+from pynput import keyboard
 
 _LOGGER = logging.getLogger(__name__)
 
