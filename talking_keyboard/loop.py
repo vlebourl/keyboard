@@ -69,7 +69,7 @@ class Loop:
         for word in self.player.generated_words.keys():
             _LOGGER.info("    %s", word)
         self.word = "Bonjour, bienvenue sur le clavier parlant."
-        self.process_letter("\n", False)
+        self.process_letter("\n")
 
     def loop(self):
         _LOGGER.debug("Starting main loop")
