@@ -19,7 +19,6 @@ setup(
         "pygame",
         "gtts",
         "requests",
-        "rpi_ws281x",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
