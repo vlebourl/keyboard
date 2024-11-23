@@ -2,7 +2,6 @@ import argparse
 import logging
 import subprocess
 import threading
-import time
 
 from loop import Loop
 
@@ -37,20 +36,20 @@ _LOGGER.info("Starting up with log level %d", numeric_level)
 
 def check_internet_connection():
     try:
-        response = subprocess.check_output("ping -c 1 google.com", shell=True)
+        _ = subprocess.check_output("ping -c 1 google.com", shell=True)
         return True
     except subprocess.CalledProcessError:
         return False
 
 
-def update_wpa_supplicant(ssid, psk):
-    wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
+# def update_wpa_supplicant(ssid, psk):
+#     wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
 
-    with open(wpa_supplicant_path, "a") as f:
-        f.write(f'\nnetwork={{\nssid="{ssid}"\npsk="{psk}"\n}}\n')
+#     with open(wpa_supplicant_path, "a") as f:
+#         f.write(f'\nnetwork={{\nssid="{ssid}"\npsk="{psk}"\n}}\n')
 
-    subprocess.call(["sudo", "systemctl", "daemon-reload"])
-    subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
+#     subprocess.call(["sudo", "systemctl", "daemon-reload"])
+#     subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
 
 
 def get_user_input(prompt):
@@ -72,15 +71,19 @@ if __name__ == "__main__":
     _LOGGER.info("Starting talking keyboard")
 
     wifi = check_internet_connection()
+    if not wifi:
+        _LOGGER.error("No internet connexion for TTS")
+        exit
+
     # Check internet connection
-    while not wifi:
-        time.sleep(2)
-        ssid = get_user_input("wifi SSID:")
-        psk = get_user_input("wifi PSK:")
-        update_wpa_supplicant(ssid, psk)
-        time.sleep(5)
-        wifi = check_internet_connection()
-        time.sleep(2)
+    # while not wifi:
+    #     time.sleep(2)
+    #     ssid = get_user_input("wifi SSID:")
+    #     psk = get_user_input("wifi PSK:")
+    #     update_wpa_supplicant(ssid, psk)
+    #     time.sleep(5)
+    #     wifi = check_internet_connection()
+    #     time.sleep(2)
 
     loop = Loop()
     loop.preload()
