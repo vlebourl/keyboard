@@ -1,6 +1,6 @@
 import logging
 
-from const import KEY_MAP
+from const import KEY_MAP, DIGITS_MAP
 from pynput import keyboard
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +33,8 @@ class Keyboard:
             if hasattr(key, "char") and key.char is not None:
                 # Adjust character based on shift and caps lock states
                 char = key.char
+                if char in DIGITS_MAP:
+                    char = DIGITS_MAP[char]
                 if self.caps_lock ^ self.shift_pressed:  # XOR for toggling case
                     char = char.upper() if char.islower() else char.lower()
                 self.current_letter = char
