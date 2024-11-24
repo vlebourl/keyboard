@@ -5,7 +5,7 @@ import re
 import sys
 
 from audio import PygameMP3Player
-from const import COMMON_LETTERS, ALLOWED_CHARS
+from const import ALLOWED_CHARS, COMMON_LETTERS
 from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
