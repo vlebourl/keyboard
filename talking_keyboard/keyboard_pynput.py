@@ -1,9 +1,13 @@
 import logging
+import queue
+import time
 
 from const import DIGITS_MAP, KEY_MAP
 from pynput import keyboard
 
 _LOGGER = logging.getLogger(__name__)
+
+shift_keys = {keyboard.Key.shift, keyboard.Key.shift_r}
 
 
 class Keyboard:
@@ -11,17 +15,18 @@ class Keyboard:
         _LOGGER.debug("Loading with pynput")
         self.shift_pressed = False
         self.caps_lock = False
-        self.current_letter = None
+        self.key_queue = queue.Queue()  # Queue to store key events
 
         # Listener for keyboard events
         self.listener = keyboard.Listener(
-            on_press=self._on_press, on_release=self._on_release
+            on_press=self._on_press, on_release=self._on_release, suppress=False
         )
         self.listener.start()
 
     def _on_press(self, key):
         try:
-            if key == keyboard.Key.shift or key == keyboard.Key.shift_r:
+            # Use a set for faster lookup
+            if key in shift_keys:
                 self.shift_pressed = True
             elif key == keyboard.Key.caps_lock:
                 self.caps_lock = not self.caps_lock
@@ -30,26 +35,22 @@ class Keyboard:
 
     def _on_release(self, key):
         try:
-            # Check if a key maps to a character
             if hasattr(key, "char") and key.char is not None:
                 char = key.char
-                if char in DIGITS_MAP:
-                    char = DIGITS_MAP[char]
                 if self.caps_lock ^ self.shift_pressed:
                     char = char.upper() if char.islower() else char.lower()
-                self.current_letter = char
+                self.key_queue.put(char)  # Add the key to the queue
             elif hasattr(key, "name") and key.name in KEY_MAP:
-                self.current_letter = KEY_MAP[key.name]
-            else:
-                _LOGGER.warning("Unsupported key: %s", key)
-
-            if key == keyboard.Key.shift or key == keyboard.Key.shift_r:
+                self.key_queue.put(KEY_MAP[key.name])
+            elif key in {keyboard.Key.shift, keyboard.Key.shift_r}:
                 self.shift_pressed = False
         except Exception as e:
-            _LOGGER.error(f"Error processing key release: {e}")
+            _LOGGER.error(f"Error on key release: {e}")
 
-    def get_one_letter(self) -> str:
-        self.current_letter = None
-        while self.current_letter is None:
-            pass
-        return self.current_letter
+    def get_one_letter(self):
+        """Get the next key from the queue."""
+        while True:
+            try:
+                return self.key_queue.get(timeout=0.1)  # Non-blocking wait
+            except queue.Empty:
+                continue

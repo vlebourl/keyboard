@@ -5,7 +5,7 @@ import re
 import sys
 
 from audio import PygameMP3Player
-from const import COMMON_LETTERS
+from const import COMMON_LETTERS, ALLOWED_CHARS
 from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,29 +29,40 @@ class Loop:
     word = ""
 
     def __init__(self):
+        self.word_split_pattern = re.compile(r"[A-Za-z]+|\d+")
         self.keyboard = Keyboard()
         self.player = PygameMP3Player()
 
     def _process_numbers(self, word: str) -> str:
-        # if no digit found, return
-        if not any(char.isdigit() for char in word):
+        # Check for digits and return early if none are found
+        for char in word:
+            if char.isdigit():
+                break
+        else:
             return word
-        words = re.findall(r"[A-Za-z]+|\d+", word)
-        for i, word in enumerate(words):
-            if word.isdigit():
-                words[i] = num2words(word, lang="fr_CH")
-                words[i] = (
-                    words[i]
-                    .replace("huitante", "quatre-vingt")
-                    .replace("vingt et un", "vingt-et-un")
-                )
+
+        # Split the word into alphanumeric and numeric parts
+        words = self.word_split_pattern.findall(word)
+
+        for i, part in enumerate(words):
+            if part.isdigit():
+                words[i] = self._convert_number_to_words(part)
+
         return " ".join(words)
+
+    def _convert_number_to_words(self, number: str) -> str:
+        # Convert the number to words (assuming num2words is a function that does this)
+        words = num2words(number, lang="fr_CH")
+        words = words.replace("huitante", "quatre-vingt").replace(
+            "vingt et un", "vingt-et-un"
+        )
+        return words
 
     def _process_letter(self, _letter: str) -> None:
         if _letter in {"\n", "\r"}:
             self._process_word()
             return
-        if not _letter.isalnum() and _letter != " ":
+        if _letter not in ALLOWED_CHARS:
             return
         _LOGGER.debug("Got letter: %s", _letter)
         self.word += _letter
