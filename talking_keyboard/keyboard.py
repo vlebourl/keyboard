@@ -7,8 +7,8 @@ _LOGGER = logging.getLogger(__name__)
 
 if KB_UTIL == "pynput":
 
+    from const import DIGITS_MAP, KEY_MAP
     from pynput import keyboard
-    from const import KEY_MAP, DIGITS_MAP
 
     class Keyboard:
         def __init__(self):
@@ -64,8 +64,8 @@ elif KB_UTIL == "evdev":
 
     import glob
 
-    from evdev import InputDevice, categorize, ecodes
     from const import EV_MAP
+    from evdev import InputDevice, categorize, ecodes
 
     class Keyboard:
 
