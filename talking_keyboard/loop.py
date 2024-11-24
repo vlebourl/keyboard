@@ -1,14 +1,29 @@
 import logging
+import os
+import platform
 import re
 import sys
 
-from audio import PygameMP3Player
-from const import COMMON_LETTERS
 from num2words import num2words
 
-from keyboard import Keyboard
+from audio import PygameMP3Player
+from const import COMMON_LETTERS
 
 _LOGGER = logging.getLogger(__name__)
+
+
+KB_UTIL = (
+    "evdev"
+    if platform.system() == "Linux" and "DISPLAY" not in os.environ
+    else "pynput"
+)
+
+if KB_UTIL == "pynput":
+    from keyboard_pynput import Keyboard
+elif KB_UTIL == "evdev":
+    from keyboard_evdev import Keyboard
+else:
+    raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
 
 
 class Loop:
