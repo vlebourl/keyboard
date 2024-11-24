@@ -1,7 +1,14 @@
 import logging
+import os
+import platform
 
 from const import DIGITS_MAP, KEY_MAP
-from pynput import keyboard
+
+KB_UTIL = (
+    "evdev"
+    if platform.system() == "Linux" and "DISPLAY" not in os.environ
+    else "pynput"
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,6 +19,7 @@ if KB_UTIL == "pynput":
 
     class Keyboard:
         def __init__(self):
+            _LOGGER.debug("Loading with pynput")
             self.shift_pressed = False
             self.caps_lock = False
             self.current_letter = None
@@ -70,6 +78,7 @@ elif KB_UTIL == "evdev":
     class Keyboard:
 
         def __init__(self):
+            _LOGGER.debug("Loading with evdev")
             _device_paths = (
                 glob.glob("/dev/input/by-id/*kbd*")
                 or glob.glob("/dev/input/by-id/*ogitech*")
