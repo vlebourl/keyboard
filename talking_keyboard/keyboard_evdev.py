@@ -21,7 +21,7 @@ class Keyboard:
         self.shift_pressed = False
         self.caps_lock = False
 
-    def update_key_states(self, key_event):
+    def _update_key_states(self, key_event):
         if key_event.keycode in ["KEY_LEFTSHIFT", "KEY_RIGHTSHIFT"]:
             self.shift_pressed = key_event.keystate == key_event.key_down
         elif (
@@ -35,7 +35,7 @@ class Keyboard:
             if event.type != ecodes.EV_KEY:
                 continue
             key_event = categorize(event)
-            self.update_key_states(key_event)
+            self._update_key_states(key_event)
             if key_event.keystate == key_event.key_up:
                 try:
                     if mapped_key := EV_MAP.get(

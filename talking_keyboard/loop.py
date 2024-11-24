@@ -32,7 +32,7 @@ class Loop:
         self.keyboard = Keyboard()
         self.player = PygameMP3Player()
 
-    def process_numbers(self, word: str) -> str:
+    def _process_numbers(self, word: str) -> str:
         # if no digit found, return
         if not any(char.isdigit() for char in word):
             return word
@@ -47,9 +47,9 @@ class Loop:
                 )
         return " ".join(words)
 
-    def process_letter(self, _letter: str) -> None:
+    def _process_letter(self, _letter: str) -> None:
         if _letter in {"\n", "\r"}:
-            self.process_word()
+            self._process_word()
             return
         if not _letter.isalnum() and _letter != " ":
             return
@@ -58,12 +58,12 @@ class Loop:
         _letter = "espace" if _letter == " " else _letter
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
-    def process_word(self):
+    def _process_word(self):
         if self.word == "exitnowarn":
             logging.warning("Exit the script")
             sys.exit(0)
         if self.word:
-            self.word = self.process_numbers(self.word)
+            self.word = self._process_numbers(self.word)
             _LOGGER.info("playing word: %s", self.word)
             self.player.open_mp3_string_and_play(self.word)
             self.word = ""
@@ -79,14 +79,14 @@ class Loop:
         for word in self.player.generated_words.keys():
             _LOGGER.info("    %s", word)
         self.word = "Bonjour, bienvenue sur le clavier parlant."
-        self.process_letter("\n")
+        self._process_letter("\n")
 
     def loop(self):
         _LOGGER.debug("Starting main loop")
         _letter = self.keyboard.get_one_letter()
         while True:
             try:
-                self.process_letter(_letter)
+                self._process_letter(_letter)
                 _letter = self.keyboard.get_one_letter()
             except Exception as e:
                 _LOGGER.error("Critical Exception: %s", e)

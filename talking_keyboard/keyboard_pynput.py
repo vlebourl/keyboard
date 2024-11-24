@@ -15,11 +15,11 @@ class Keyboard:
 
         # Listener for keyboard events
         self.listener = keyboard.Listener(
-            on_press=self.on_press, on_release=self.on_release
+            on_press=self._on_press, on_release=self._on_release
         )
         self.listener.start()
 
-    def on_press(self, key):
+    def _on_press(self, key):
         try:
             if key == keyboard.Key.shift or key == keyboard.Key.shift_r:
                 self.shift_pressed = True
@@ -28,7 +28,7 @@ class Keyboard:
         except Exception as e:
             _LOGGER.error(f"Error processing key press: {e}")
 
-    def on_release(self, key):
+    def _on_release(self, key):
         try:
             # Check if a key maps to a character
             if hasattr(key, "char") and key.char is not None:
