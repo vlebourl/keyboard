@@ -5,7 +5,6 @@ import platform
 import threading
 
 import requests
-
 from loop import Loop
 
 KB_UTIL = (

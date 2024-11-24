@@ -4,10 +4,9 @@ import platform
 import re
 import sys
 
-from num2words import num2words
-
 from audio import PygameMP3Player
 from const import COMMON_LETTERS
+from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
 
