@@ -17,7 +17,12 @@ class Keyboard:
         )
         if not _device_paths:
             raise ValueError("No keyboard device found!")
-        self.device = InputDevice(_device_paths[0])
+        for device in _device_paths:
+            try:
+                self.device = InputDevice(device)
+                break
+            except Exception:
+                continue
         self.shift_pressed = False
         self.caps_lock = False
 

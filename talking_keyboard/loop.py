@@ -70,6 +70,9 @@ class Loop:
         self.player.open_mp3_string_and_play(f" {_letter} ")
 
     def _process_word(self):
+        self.word = self.word.strip()
+        if len(self.word) == 0:
+            return
         if self.word == "exitnowarn":
             logging.warning("Exit the script")
             sys.exit(0)
