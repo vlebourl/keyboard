@@ -2,7 +2,7 @@ import glob
 import logging
 
 from const import EV_MAP
-from evdev import InputDevice, categorize, ecodes
+from evdev import EvdevError, InputDevice, categorize, ecodes
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,10 +19,13 @@ class Keyboard:
             raise ValueError("No keyboard device found!")
         for device in _device_paths:
             try:
-                self.device = InputDevice(device)
+                candidate_device = InputDevice(device)
+                self.device = candidate_device
                 break
-            except Exception:
-                continue
+            except (OSError, EvdevError) as e:  # Replace with specific exceptions.
+                _LOGGER.debug(f"Failed to initialize device {device}: {e}")
+        else:
+            raise RuntimeError("No valid input device found.")
         self.shift_pressed = False
         self.caps_lock = False
 
