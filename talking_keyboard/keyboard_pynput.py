@@ -1,6 +1,5 @@
 import logging
 import queue
-import time
 
 from const import DIGITS_MAP, KEY_MAP
 from pynput import keyboard
