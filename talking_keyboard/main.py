@@ -1,14 +1,24 @@
 import argparse
 import logging
 import os
-import subprocess
-import sys
+import platform
 import threading
-import time
 
-from const import COMMON_LETTERS, KEY_MAP
-from keyboard import Keyboard
-from lcd import LCDDisplay
+import requests
+from loop import Loop
+
+KB_UTIL = (
+    "evdev"
+    if platform.system() == "Linux" and "DISPLAY" not in os.environ
+    else "pynput"
+)
+
+if KB_UTIL == "pynput":
+    from keyboard_pynput import Keyboard
+elif KB_UTIL == "evdev":
+    from keyboard_evdev import Keyboard
+else:
+    raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
 
 
 def parse_arguments():
@@ -36,88 +46,67 @@ logging.basicConfig(
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-# if os.geteuid() != 0:
-#     _LOGGER.error("This script must be run with sudo privileges.")
-#     sys.exit(1)
-
 _LOGGER.info("Starting up with log level %d", numeric_level)
 
-def check_internet_connection():
+
+def check_internet(url="https://www.google.com", timeout=5):
     try:
-        response = subprocess.check_output("ping -c 1 google.com", shell=True)
-        return True
-    except subprocess.CalledProcessError:
+        response = requests.get(url, timeout=timeout)
+        # Ensure the request was successful
+        return response.status_code == 200
+    except requests.ConnectionError:
         return False
 
-def update_wpa_supplicant(ssid, psk):
-    wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
 
-    with open(wpa_supplicant_path, "a") as f:
-        f.write(f"\nnetwork={{\nssid=\"{ssid}\"\npsk=\"{psk}\"\n}}\n")
+# def update_wpa_supplicant(ssid, psk):
+#     wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
 
-    subprocess.call(["sudo", "systemctl", "daemon-reload"])
-    subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
+#     with open(wpa_supplicant_path, "a") as f:
+#         f.write(f'\nnetwork={{\nssid="{ssid}"\npsk="{psk}"\n}}\n')
 
-def get_user_input(prompt, lcd):
-    lcd.write_words(prompt, "")
+#     subprocess.call(["sudo", "systemctl", "daemon-reload"])
+#     subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
+
+
+def get_user_input(prompt):
     user_input = ""
 
     while True:
         char = input()
-        if char == '\n':
+        if char == "\n":
             break
-        elif char == '\b':
+        elif char == "\b":
             user_input = user_input[:-1]
-            lcd.write_words(prompt, user_input)
         elif char:
             user_input += char
-            lcd.add_letter(char)
 
     return user_input
 
+
 if __name__ == "__main__":
-        _LOGGER.info("Starting talking keyboard")
-        # Initialize LCD
-        lcd = LCDDisplay()
+    _LOGGER.info("Starting talking keyboard")
 
-        wifi = check_internet_connection()
-        # Check internet connection
-        while not wifi:
-            lcd.write_words("No wifi", "")
-            time.sleep(2)
-            ssid = get_user_input("wifi SSID:", lcd)
-            psk = get_user_input("wifi PSK:", lcd)
-            update_wpa_supplicant(ssid, psk)
-            time.sleep(5)
-            wifi = check_internet_connection()
-            time.sleep(2)
-            
-        lcd.write_words("wifi OK", "")
-        keyboard = Keyboard(lcd=lcd)
+    wifi = check_internet()
+    if not wifi:
+        _LOGGER.error("No internet connection for TTS")
+        exit
 
-        _LOGGER.info("Preloading common letters")
-        for letter in COMMON_LETTERS:
-            if f" {letter} " not in keyboard.player.generated_words:
-                _LOGGER.info("    Preloading letter: %s", letter)
-                keyboard.player.preload_sound(f" {letter} ")
-        keyboard.player.save_common_words()
+    # Check internet connection
+    # while not wifi:
+    #     time.sleep(2)
+    #     ssid = get_user_input("wifi SSID:")
+    #     psk = get_user_input("wifi PSK:")
+    #     update_wpa_supplicant(ssid, psk)
+    #     time.sleep(5)
+    #     wifi = check_internet()
+    #     time.sleep(2)
 
-        _LOGGER.info("Preloaded words are:")
-        for word in keyboard.player.generated_words.keys():
-            _LOGGER.info("    %s", word)
+    loop = Loop()
+    loop.preload()
 
-        keyboard.word = "Bonjour, bienvenue sur le clavier parlant."
-        keyboard.process_letter("\n", False)
+    save_thread = threading.Thread(
+        target=loop.player.periodic_save, args=(300,), daemon=True
+    )
+    save_thread.start()
 
-        save_thread = threading.Thread(
-            target=keyboard.player.periodic_save, args=(300,), daemon=True
-        )
-        save_thread.start()
-
-        if keyboard.lcd.lcd:
-            keyboard.lcd.lcd.clear()
-            keyboard.lcd.buffer = ["BONJOUR LENAIC", "ECRIS UNE LETTRE"]
-            keyboard.lcd._write_buffer()
-
-        keyboard.loop()
+    loop.loop()

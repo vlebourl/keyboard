@@ -1,6 +1,8 @@
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
-KEY_MAP = {
+ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
+KEY_MAP = {"enter": "\n", "space": " "}
+EV_MAP = {
     "KEY_A": "q",
     "KEY_B": "b",
     "KEY_C": "c",
@@ -53,5 +55,17 @@ KEY_MAP = {
     "KEY_KP8": "8",
     "KEY_KP9": "9",
     # Add other keys as needed
+}
+DIGITS_MAP = {
+    "&": "1",
+    "é": "2",
+    '"': "3",
+    "'": "4",
+    "(": "5",
+    "-": "6",
+    "è": "7",
+    "_": "8",
+    "ç": "9",
+    "à": "0",
 }
 MP3_DIR = "sounds"

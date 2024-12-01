@@ -14,13 +14,11 @@ setup(
         ],
     },
     install_requires=[
-        "pyalsaaudio",
-        "evdev",
-        "pygame",
         "gtts",
+        "num2words",
+        "pygame",
         "requests",
-        "rpi_ws281x",
-        "RPLCD",
+        "pynput",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

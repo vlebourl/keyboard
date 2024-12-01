@@ -5,27 +5,12 @@ import logging
 import os
 import time
 
-import alsaaudio
 import pygame
 import requests
+from const import COMMON_WORDS_FILE, MP3_DIR
 from gtts import gTTS
 
-from const import COMMON_WORDS_FILE, MP3_DIR
-
 _LOGGER = logging.getLogger(__name__)
-
-
-class AlsaMixer:
-    def __init__(self, mixer_name="PCM", cardindex=1):
-        self.mixer = alsaaudio.Mixer('Headphone', cardindex=3)
-        self.volume = self.getvolume()
-    
-    def getvolume(self):
-        return self.mixer.getvolume()[0]
-
-    def set_volume(self, vol):
-        self.mixer.setvolume(vol)
-        _LOGGER.info("Volume set to %d", vol)
 
 
 class GoogleTTS:
@@ -57,20 +42,16 @@ class GoogleTTS:
 
 
 class PygameMP3Player:
-    def __init__(self, tts):
+    def __init__(self):
         if not os.path.exists(MP3_DIR):
             os.makedirs(MP3_DIR)
-        self.tts = tts
+        self.tts = GoogleTTS()
         self.generated_words = {}
         self.word_count = {}
 
         self.load_common_words()
 
         try:
-            # Check if audio devices are available
-            if len(alsaaudio.cards()) == 0:
-                raise Exception("No ALSA audio devices found.")
-
             pygame.init()
             self.player = pygame.mixer
             self.player.init()
@@ -80,7 +61,6 @@ class PygameMP3Player:
         except Exception as e:
             _LOGGER.error(f"General error initializing audio: {e}")
             raise
-
 
     def preload_sound(self, text):
         filename = os.path.join(MP3_DIR, f"{text}.mp3")
