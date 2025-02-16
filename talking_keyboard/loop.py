@@ -3,6 +3,8 @@ import os
 import platform
 import re
 import sys
+import time
+import random
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS, COMMON_LETTERS
@@ -10,6 +12,7 @@ from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
 
+MODE = {"1": "Ecriture Libre", "2": "Ecris le nombre donné"}
 
 KB_UTIL = (
     "evdev"
@@ -32,6 +35,7 @@ class Loop:
         self.word_split_pattern = re.compile(r"[A-Za-z]+|\d+")
         self.keyboard = Keyboard()
         self.player = PygameMP3Player()
+        self._mode = 0
 
     def _process_numbers(self, word: str) -> str:
         # Check for digits and return early if none are found
@@ -60,27 +64,33 @@ class Loop:
 
     def _process_letter(self, _letter: str) -> None:
         if _letter in {"\n", "\r"}:
-            self._process_word()
-            return
+            return self._process_word()
         if _letter not in ALLOWED_CHARS:
-            return
+            return ""
         _LOGGER.debug("Got letter: %s", _letter)
         self.word += _letter
         _letter = "espace" if _letter == " " else _letter
         self.player.open_mp3_string_and_play(f" {_letter} ")
+        return ""
 
     def _process_word(self):
         self.word = self.word.strip()
         if len(self.word) == 0:
-            return
+            return ""
         if self.word == "exitnowarn":
             logging.warning("Exit the script")
             sys.exit(0)
+        if self.word == "changemode":
+            self.select_game_mode()
+            self.word = ""
+            return "kill_loop"
         if self.word:
             self.word = self._process_numbers(self.word)
             _LOGGER.info("playing word: %s", self.word)
             self.player.open_mp3_string_and_play(self.word)
+            word = self.word
             self.word = ""
+            return word
 
     def preload(self):
         _LOGGER.info("Preloading common letters")
@@ -92,15 +102,62 @@ class Loop:
         _LOGGER.info("Preloaded words are:")
         for word in self.player.generated_words.keys():
             _LOGGER.info("    %s", word)
-        self.word = "Bonjour, bienvenue sur le clavier parlant."
-        self._process_letter("\n")
+        self.player.open_mp3_string_and_play(
+            "Bonjour, bienvenue sur le clavier parlant."
+        )
+
+    def select_game_mode(self):
+        _LOGGER.info("Select game mode:")
+        _LOGGER.info("  - mode 1: mode classique")
+        _LOGGER.info("  - mode 2: écris le nombre")
+        self.player.open_mp3_string_and_play("Choisis un mode de jeu: 1 ou 2")
+        _letter = 0
+        while _letter not in ["1", "2"]:
+            _letter = self.keyboard.get_one_letter()
+        self.player.open_mp3_string_and_play(f"Tu as choisis le mode {MODE[_letter]}")
+        self._mode = _letter
+
+    def to_guess(self):
+        size = random.randint(3, 4)
+        to_guess = (
+            "".join([str(random.randint(0, 9)) for _ in range(size)]).lstrip("0") or "0"
+        )
+        _LOGGER.info(f"Ecris: {to_guess}")
+        to_guess = self._process_numbers(to_guess)
+        self.player.open_mp3_string_and_play(f"Ecris le nombre : {to_guess}")
+        return to_guess
 
     def loop(self):
         _LOGGER.debug("Starting main loop")
-        _letter = self.keyboard.get_one_letter()
-        while True:
-            try:
-                self._process_letter(_letter)
-                _letter = self.keyboard.get_one_letter()
-            except Exception as e:
-                _LOGGER.error("Critical Exception: %s", e)
+        if self._mode == "1":
+            _letter = self.keyboard.get_one_letter()
+            while True:
+                try:
+                    word = self._process_letter(_letter)
+                    if word == "kill_loop":
+                        break
+                    _letter = self.keyboard.get_one_letter()
+                except Exception as e:
+                    _LOGGER.error("Critical Exception: %s", e)
+        elif self._mode == "2":
+            to_guess = self.to_guess()
+            _letter = self.keyboard.get_one_letter()
+            while True:
+                try:
+                    word = self._process_letter(_letter)
+                    if _letter in {"\n", "\r"}:
+                        if word == "kill_loop":
+                            break
+                        result = word.lstrip("0") or "0"
+                        if result.strip() == to_guess:
+                            self.player.open_mp3_string_and_play("Bravo")
+                            to_guess = self.to_guess()
+                        else:
+                            _LOGGER.info(f"Guessed: {result}")
+                            self.player.open_mp3_string_and_play(
+                                f"Pas tout à fait... Ecris le nombre {to_guess}"
+                            )
+                    _letter = self.keyboard.get_one_letter()
+                except Exception as e:
+                    _LOGGER.error("Critical Exception: %s", e)
+        self.loop()

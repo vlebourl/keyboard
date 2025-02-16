@@ -103,6 +103,7 @@ if __name__ == "__main__":
 
     loop = Loop()
     loop.preload()
+    loop.select_game_mode()
 
     save_thread = threading.Thread(
         target=loop.player.periodic_save, args=(300,), daemon=True
