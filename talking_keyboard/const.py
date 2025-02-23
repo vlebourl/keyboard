@@ -2,7 +2,7 @@ COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
 KEY_MAP = {"enter": "\n", "space": " "}
-MODES = {"1": "écriture libre", "2": "écris le nombre donné"}
+MODES = {"1": "écriture libre", "2": "écris la proposition"}
 EV_MAP = {
     "KEY_A": "q",
     "KEY_B": "b",
@@ -70,6 +70,9 @@ DIGITS_MAP = {
     "à": "0",
 }
 MP3_DIR = "sounds"
-# Read file dictionary.list and import into variable DICTIONARY
-with open("dictionary.list", "r") as f:
-    DICTIONARY = set(f.read().splitlines())
+# Read file dictionary.list and import into variable an array converted to lower case
+with open("talking_keyboard/dictionary.list") as f:
+    DICTIONARY = [
+        line.strip().lower().replace("é", "e").replace("è", "e").replace("à", "a")
+        for line in f.readlines()
+    ]

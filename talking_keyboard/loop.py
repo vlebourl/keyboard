@@ -9,7 +9,7 @@ import time
 from num2words import num2words
 
 from audio import PygameMP3Player
-from const import ALLOWED_CHARS, COMMON_LETTERS, MODES
+from const import ALLOWED_CHARS, COMMON_LETTERS, DICTIONARY, MODES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ class Loop:
         self.keyboard = Keyboard()
         self.player = PygameMP3Player()
         self._mode = 0
+        self._score = {}
 
     def _process_numbers(self, word: str) -> str:
         # Check for digits and return early if none are found
@@ -79,6 +80,11 @@ class Loop:
         if self.word == "exitnowarn":
             logging.warning("Exit the script")
             sys.exit(0)
+        if self.word == "printscore":
+            for key, value in self._score.items():
+                _LOGGER.info(f"{key}: {value[0]} correct, {value[1]} incorrect")
+            self.word = ""
+            return ""
         if self.word == "changemode":
             self.select_game_mode()
             self.word = ""
@@ -108,7 +114,7 @@ class Loop:
     def select_game_mode(self):
         _LOGGER.info("Select game mode:")
         _LOGGER.info("  - mode 1: mode classique")
-        _LOGGER.info("  - mode 2: écris le nombre")
+        _LOGGER.info("  - mode 2: écris la proposition")
         self.player.open_mp3_string_and_play("Choisis un mode de jeu: 1 ou 2")
         _letter = 0
         while _letter not in ["1", "2"]:
@@ -117,13 +123,19 @@ class Loop:
         self._mode = _letter
 
     def to_guess(self):
-        size = random.randint(3, 4)
-        to_guess = (
-            "".join([str(random.randint(0, 9)) for _ in range(size)]).lstrip("0") or "0"
-        )
+        choose = random.randint(0, 9)
+        if choose > 5:
+            size = random.randint(2, 4)
+            to_guess = (
+                "".join([str(random.randint(0, 9)) for _ in range(size)]).lstrip("0")
+                or "0"
+            )
+            to_guess = self._process_numbers(to_guess)
+        else:
+            # Choose a random word from the dictionary
+            to_guess = random.choice(DICTIONARY)
+        self.player.open_mp3_string_and_play(f"Ecris : {to_guess}")
         _LOGGER.info(f"Ecris: {to_guess}")
-        to_guess = self._process_numbers(to_guess)
-        self.player.open_mp3_string_and_play(f"Ecris le nombre : {to_guess}")
         return to_guess
 
     def loop(self):
@@ -150,11 +162,19 @@ class Loop:
                         result = word.lstrip("0") or "0"
                         if result.strip() == to_guess:
                             self.player.open_mp3_string_and_play("Bravo")
+                            self._score[to_guess] = (
+                                self._score.get(to_guess, (0, 0))[0] + 1,
+                                self._score.get(to_guess, (0, 0))[1],
+                            )
                             to_guess = self.to_guess()
                         else:
                             _LOGGER.info(f"Guessed: {result}")
                             self.player.open_mp3_string_and_play(
-                                f"Pas tout à fait... Ecris le nombre {to_guess}"
+                                f"Pas tout à fait... Ecris {to_guess}"
+                            )
+                            self._score[to_guess] = (
+                                self._score.get(to_guess, (0, 0))[0],
+                                self._score.get(to_guess, (0, 0))[1] + 1,
                             )
                     _letter = self.keyboard.get_one_letter()
                 except Exception as e:
