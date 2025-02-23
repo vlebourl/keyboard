@@ -3,7 +3,7 @@ import queue
 
 from pynput import keyboard
 
-from const import DIGITS_MAP, KEY_MAP
+from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 

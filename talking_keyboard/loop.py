@@ -4,7 +4,6 @@ import platform
 import random
 import re
 import sys
-import time
 
 from num2words import num2words
 
