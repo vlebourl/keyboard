@@ -1,8 +1,8 @@
 import logging
 import os
 import platform
-import random
 import re
+import secrets
 import sys
 
 from audio import PygameMP3Player
@@ -121,17 +121,17 @@ class Loop:
         self._mode = _letter
 
     def to_guess(self):
-        choose = random.randint(0, 9)
+        choose = secrets.randbelow(10)
         if choose > 5:
-            size = random.randint(2, 4)
+            size = 2 + secrets.randbelow(2)
             to_guess = (
-                "".join([str(random.randint(0, 9)) for _ in range(size)]).lstrip("0")
+                "".join([str(secrets.randbelow(10)) for _ in range(size)]).lstrip("0")
                 or "0"
             )
             to_guess = self._process_numbers(to_guess)
         else:
             # Choose a random word from the dictionary
-            to_guess = random.choice(DICTIONARY)
+            to_guess = DICTIONARY[secrets.randbelow(len(DICTIONARY))]
         self.player.open_mp3_string_and_play(f"Ecris : {to_guess}")
         _LOGGER.info(f"Ecris: {to_guess}")
         return to_guess
