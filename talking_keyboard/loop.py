@@ -1,18 +1,17 @@
 import logging
 import os
 import platform
+import random
 import re
 import sys
 import time
-import random
 
-from audio import PygameMP3Player
-from const import ALLOWED_CHARS, COMMON_LETTERS
 from num2words import num2words
 
-_LOGGER = logging.getLogger(__name__)
+from audio import PygameMP3Player
+from const import ALLOWED_CHARS, COMMON_LETTERS, MODES
 
-MODE = {"1": "Ecriture Libre", "2": "Ecris le nombre donné"}
+_LOGGER = logging.getLogger(__name__)
 
 KB_UTIL = (
     "evdev"
@@ -114,7 +113,7 @@ class Loop:
         _letter = 0
         while _letter not in ["1", "2"]:
             _letter = self.keyboard.get_one_letter()
-        self.player.open_mp3_string_and_play(f"Tu as choisis le mode {MODE[_letter]}")
+        self.player.open_mp3_string_and_play(f"Tu as choisis le mode {MODES[_letter]}")
         self._mode = _letter
 
     def to_guess(self):
