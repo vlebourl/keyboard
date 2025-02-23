@@ -1,3 +1,5 @@
+import os
+
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
@@ -70,8 +72,9 @@ DIGITS_MAP = {
     "à": "0",
 }
 MP3_DIR = "sounds"
-# Read file dictionary.list and import into variable an array converted to lower case
-with open("talking_keyboard/dictionary.list") as f:
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dictionary_path = os.path.join(current_dir, "dictionary.list")
+with open(dictionary_path) as f:
     DICTIONARY = [
         line.strip().lower().replace("é", "e").replace("è", "e").replace("à", "a")
         for line in f.readlines()
