@@ -1,9 +1,8 @@
 import glob
 import logging
 
-from evdev import EvdevError, InputDevice, categorize, ecodes
-
 from const import EV_MAP
+from evdev import EvdevError, InputDevice, categorize, ecodes
 
 _LOGGER = logging.getLogger(__name__)
 
