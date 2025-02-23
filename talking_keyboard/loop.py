@@ -136,7 +136,8 @@ class Loop:
         _LOGGER.info(f"Ecris: {to_guess}")
         return to_guess
 
-    def loop(self):
+def loop(self):
+    while True:
         _LOGGER.debug("Starting main loop")
         if self._mode == "1":
             _letter = self.keyboard.get_one_letter()
@@ -144,7 +145,7 @@ class Loop:
                 try:
                     word = self._process_letter(_letter)
                     if word == "kill_loop":
-                        break
+                        break  # On sort de la boucle pour éventuellement changer de mode
                     _letter = self.keyboard.get_one_letter()
                 except Exception as e:
                     _LOGGER.error("Critical Exception: %s", e)
@@ -156,7 +157,7 @@ class Loop:
                     word = self._process_letter(_letter)
                     if _letter in {"\n", "\r"}:
                         if word == "kill_loop":
-                            break
+                            break  # On sort pour changer de mode
                         result = word.lstrip("0") or "0"
                         if result.strip() == to_guess:
                             self.player.open_mp3_string_and_play("Bravo")
@@ -177,4 +178,3 @@ class Loop:
                     _letter = self.keyboard.get_one_letter()
                 except Exception as e:
                     _LOGGER.error("Critical Exception: %s", e)
-        self.loop()
