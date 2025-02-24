@@ -74,7 +74,7 @@ DIGITS_MAP = {
 MP3_DIR = "sounds"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dictionary_path = os.path.join(current_dir, "dictionary.list")
-with open(dictionary_path) as f:
+with open(dictionary_path, encoding='utf-8') as f:
     DICTIONARY = [
         line.strip().lower().replace("é", "e").replace("è", "e").replace("à", "a")
         for line in f.readlines()
