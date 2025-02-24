@@ -1,42 +1,66 @@
 # Talking Keyboard
 
-This program implements a talking keyboard that reads aloud the typed characters and words. The application uses either Google Text-to-Speech API or the Pico TTS system to generate speech based on the user's input.
+This project implements a talking keyboard that audibly enunciates typed characters and words in real time. It is designed to work seamlessly on both Linux systems (using `evdev` when a display is not available) and environments with a GUI (using `pynput`).
 
-## Dependencies
+## Features
 
-- Python 3.6 or higher
-- simpleaudio
-- gtts (Google Text-to-Speech)
-- Pico TTS (available on Linux systems)
+- **Real-Time Audio Feedback:** Converts each typed character and assembled word into speech instantly.
+- **Dual Input Support:**
+  - **evdev:** For Linux systems without a graphical interface.
+  - **pynput:** For systems running a GUI.
+- **Intelligent TTS Selection:** Utilizes Google Text-to-Speech when an internet connection is available, and falls back to Pico TTS on Linux when offline.
+- **Preloading Mechanism:** Preloads common letters for enhanced responsiveness.
+- **Numeric Conversion:** Translates digit sequences into their word representation using `num2words`.
+- **Periodic Persistence:** Automatically saves frequently used words to a file every 300 seconds.
+
+## Requirements
+
+- **Python:** Version 3.10 or higher
+- **Dependencies:** Install the following Python packages:
+  - `gtts`
+  - `num2words`
+  - `pygame`
+  - `requests`
+  - `pynput`
+- **Optional (Linux):** For offline TTS, install Pico TTS (e.g., on Debian/Ubuntu: `sudo apt-get install libttspico-utils`)
 
 ## Installation
 
-1. Install Python 3.6 or higher if not already installed.
-2. Install the required Python packages using pip:
+1. Clone the Repository:
 
-```
-pip install simpleaudio gtts
+```bash
+git clone https://github.com/vlebourl/keyboard.git
+cd keyboard
 ```
 
-3. Install Pico TTS on your Linux system (if available). Follow the instructions specific to your distribution.
+2.	Install Runtime Dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+   
+3.	Install Development Dependencies (Optional):
+
+```bash
+pip install -r requirements-dev.txt
+```
 
 ## Usage
 
-1. Run the script using the following command:
-
-```
-python talking_keyboard.py
+```bash
+python talking_keyboard/main.py
 ```
 
-2. Type characters on the keyboard, and the program will play the corresponding sounds for each character and word.
-
-3. The program will preload the most common letters for faster response time.
-
-4. The program will periodically save common words to a pickle file, which will be loaded upon startup to improve performance.
+### Environment Detection:
+The application automatically detects whether to use evdev or pynput based on your system’s configuration.
 
 ## Customization
 
-You can customize the language by changing the `VOICES` list and the default language in the `TTS` class initialization. The program will automatically use Google TTS if an internet connection is available; otherwise, it will use Pico TTS.
+### Language & Voice Settings:
+Modify the VOICES list and default language within the TTS class in talking_keyboard/audio.py to tailor the speech output.
+
+### Preloading and Save Interval:
+Adjust the preloading mechanism and the periodic saving interval in the code if you desire a more tailored performance.
 
 ## License
 
