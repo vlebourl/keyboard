@@ -3,8 +3,9 @@ import os
 import platform
 import re
 import secrets
-import string
 import sys
+from dataclasses import dataclass
+from typing import Dict, Tuple, Optional
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS, COMMON_LETTERS, DICTIONARY, MODES
@@ -12,12 +13,8 @@ from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
 
-KB_UTIL = (
-    "evdev"
-    if platform.system() == "Linux" and "DISPLAY" not in os.environ
-    else "pynput"
-)
-
+# Constants
+KB_UTIL = "evdev" if platform.system() == "Linux" and "DISPLAY" not in os.environ else "pynput"
 MAGIC_KILL = "*-!this_is_a_safe_magic_string_to_kill_the_loop"
 
 if KB_UTIL == "pynput":
@@ -27,73 +24,112 @@ elif KB_UTIL == "evdev":
 else:
     raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
 
+@dataclass
+class GameScore:
+    """Represents a score for a word in the guessing game."""
+    correct: int = 0
+    incorrect: int = 0
+
 
 class Loop:
-    word = ""
+    """Main class handling the keyboard input loop and game modes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the Loop with necessary components."""
+        self.word: str = ""
         self.word_split_pattern = re.compile(r"[A-Za-z]+|\d+")
         self.keyboard = Keyboard()
         self.player = PygameMP3Player()
-        self._mode = 0
-        self._score = {}
+        self._mode: str = "0"
+        self._score: Dict[str, GameScore] = {}
 
     def _process_numbers(self, word: str) -> str:
-        # Check for digits and return early if none are found
-        for char in word:
-            if char.isdigit():
-                break
-        else:
+        """Convert numbers in text to their word representation.
+        
+        Args:
+            word: Input string that may contain numbers
+            
+        Returns:
+            String with numbers converted to words
+        """
+        if not any(char.isdigit() for char in word):
             return word
 
-        # Split the word into alphanumeric and numeric parts
         words = self.word_split_pattern.findall(word)
-
-        for i, part in enumerate(words):
-            if part.isdigit():
-                words[i] = self._convert_number_to_words(part)
-
-        return " ".join(words)
+        return " ".join(
+            self._convert_number_to_words(part) if part.isdigit() else part
+            for part in words
+        )
 
     def _convert_number_to_words(self, number: str) -> str:
-        # Convert the number to words (assuming num2words is a function that does this)
+        """Convert a numeric string to its word representation in French.
+        
+        Args:
+            number: String containing a number
+            
+        Returns:
+            French word representation of the number
+        """
         words = num2words(number, lang="fr_CH")
-        words = words.replace("huitante", "quatre-vingt").replace(
+        return words.replace("huitante", "quatre-vingt").replace(
             "vingt et un", "vingt-et-un"
         )
-        return words
 
-    def _process_letter(self, _letter: str) -> None:
-        if _letter in {"\n", "\r"}:
+    def _process_letter(self, letter: str) -> Optional[str]:
+        """Process a single letter input and update game state.
+        
+        Args:
+            letter: The input letter to process
+            
+        Returns:
+            Optional string for special commands, empty string otherwise
+        """
+        if letter in {"\n", "\r"}:
             return self._process_word()
-        if _letter not in ALLOWED_CHARS:
+        if letter not in ALLOWED_CHARS:
             return ""
-        _LOGGER.debug("Got letter: %s", _letter)
-        self.word += _letter
-        _letter = "espace" if _letter == " " else _letter
-        self.player.open_mp3_string_and_play(f" {_letter} ")
+
+        _LOGGER.debug("Got letter: %s", letter)
+        self.word += letter
+        letter_sound = "espace" if letter == " " else letter
+        self.player.open_mp3_string_and_play(f" {letter_sound} ")
         return ""
 
-    def _process_word(self):
+    def _process_word(self) -> str:
+        """Process the completed word and handle special commands.
+        
+        Returns:
+            String indicating action to take or empty string
+        """
         self.word = self.word.strip()
-        if len(self.word) == 0:
+        if not self.word:
             return ""
+
         if self.word == "exitnowarn":
             logging.warning("Exit the script")
             sys.exit(0)
-        if self.word == "printscore":
-            for key, value in self._score.items():
-                _LOGGER.info(f"{key}: {value[0]} correct, {value[1]} incorrect")
+        elif self.word == "printscore":
+            self._print_scores()
             self.word = ""
             return ""
-        if self.word == "changemode":
+        elif self.word == "changemode":
             self.select_game_mode()
             self.word = ""
             return MAGIC_KILL
-        if self.word:
-            return self._play_word()
+        
+        return self._play_word()
 
-    def _play_word(self):
+    def _print_scores(self) -> None:
+        """Print the current scores for all words."""
+        for word, score in self._score.items():
+            _LOGGER.info(f"{word}: {score.correct} correct, {score.incorrect} incorrect")
+
+    def _play_word(self) -> str:
+        """Play the current word and reset the word buffer.
+        
+        Returns:
+            The processed word that was played
+        """
         self.word = self._process_numbers(self.word)
         _LOGGER.info("playing word: %s", self.word)
         self.player.open_mp3_string_and_play(self.word)
@@ -101,86 +137,102 @@ class Loop:
         self.word = ""
         return word
 
-    def preload(self):
+    def preload(self) -> None:
+        """Preload common letters and display welcome message."""
         _LOGGER.info("Preloading common letters")
         for letter in COMMON_LETTERS:
             if f" {letter} " not in self.player.generated_words:
                 _LOGGER.info("    Preloading letter: %s", letter)
                 self.player.preload_sound(f" {letter} ")
+        
         self.player.save_common_words()
         _LOGGER.info("Preloaded words are:")
-        for word in self.player.generated_words.keys():
+        for word in self.player.generated_words:
             _LOGGER.info("    %s", word)
+            
         self.player.open_mp3_string_and_play(
             "Bonjour, bienvenue sur le clavier parlant."
         )
 
-    def select_game_mode(self):
+    def select_game_mode(self) -> None:
+        """Handle game mode selection."""
         _LOGGER.info("Select game mode:")
         _LOGGER.info("  - mode 1: mode classique")
         _LOGGER.info("  - mode 2: écris la proposition")
         self.player.open_mp3_string_and_play("Choisis un mode de jeu: 1 ou 2")
-        _letter = 0
-        while _letter not in ["1", "2"]:
-            _letter = self.keyboard.get_one_letter()
-        self.player.open_mp3_string_and_play(f"Tu as choisis le mode {MODES[_letter]}")
-        self._mode = _letter
+        
+        selected_mode = ""
+        while selected_mode not in ["1", "2"]:
+            selected_mode = self.keyboard.get_one_letter()
+            _LOGGER.info(selected_mode)
+            
+        self.player.open_mp3_string_and_play(f"Tu as choisis le mode {MODES[selected_mode]}")
+        self._mode = selected_mode
 
-    def to_guess(self):
-        choose = secrets.randbelow(10)
-        if choose > 5:
+    def generate_word_to_guess(self) -> str:
+        """Generate a random word or number for the guessing game.
+        
+        Returns:
+            String to be guessed by the player
+        """
+        if secrets.randbelow(10) > 5:
             size = 2 + secrets.randbelow(2)
-            to_guess = (
-                "".join([str(secrets.randbelow(10)) for _ in range(size)]).lstrip("0")
-                or "0"
-            )
-            to_guess = self._process_numbers(to_guess)
-        else:
-            # Choose a random word from the dictionary
-            to_guess = DICTIONARY[secrets.randbelow(len(DICTIONARY))]
-        self.player.open_mp3_string_and_play(f"Ecris : {to_guess}")
-        _LOGGER.info(f"Ecris: {to_guess}")
-        return to_guess
+            number = "".join([str(secrets.randbelow(10)) for _ in range(size)])
+            to_guess = number.lstrip("0") or "0"
+            return self._process_numbers(to_guess)
+        
+        return DICTIONARY[secrets.randbelow(len(DICTIONARY))]
 
-    def loop(self):
+    def loop(self) -> None:
+        """Main game loop that handles different game modes."""
         modes = {
             "1": self._run_classic_mode,
             "2": self._run_guessing_mode,
         }
+        
         while True:
             if self._mode not in modes:
                 self.select_game_mode()
             try:
-                modes[self._mode]()  # run the mode loop until mode change
+                modes[self._mode]()
             except Exception as e:
                 _LOGGER.error("Critical Exception: %s", e)
 
-    def _run_classic_mode(self):
-        _letter = self.keyboard.get_one_letter()
+    def _run_classic_mode(self) -> None:
+        """Run the classic mode game loop."""
         while True:
-            word = self._process_letter(_letter)
+            letter = self.keyboard.get_one_letter()
+            word = self._process_letter(letter)
             if word == MAGIC_KILL:
-                break  # Break to possibly switch mode.
-            _letter = self.keyboard.get_one_letter()
+                break
 
-    def _run_guessing_mode(self):
-        to_guess = self.to_guess()
-        _letter = self.keyboard.get_one_letter()
+    def _run_guessing_mode(self) -> None:
+        """Run the guessing mode game loop."""
+        target_word = self.generate_word_to_guess()
+        self.player.open_mp3_string_and_play(f"Ecris : {target_word}")
+        _LOGGER.info(f"Ecris: {target_word}")
+
         while True:
-            word = self._process_letter(_letter)
-            if _letter in {"\n", "\r"}:
+            letter = self.keyboard.get_one_letter()
+            word = self._process_letter(letter)
+            
+            if letter in {"\n", "\r"}:
                 if word == MAGIC_KILL:
-                    break  # Break to change mode.
-                result = word.lstrip("0") or "0"
-                score = self._score.get(to_guess, (0, 0))
-                if result.strip() == to_guess:
+                    break
+
+                guess = word.lstrip("0") or "0"
+                if target_word not in self._score:
+                    self._score[target_word] = GameScore()
+
+                if guess.strip() == target_word:
                     self.player.open_mp3_string_and_play("Bravo")
-                    self._score[to_guess] = (score[0] + 1, score[1])
-                    to_guess = self.to_guess()
+                    self._score[target_word].correct += 1
+                    target_word = self.generate_word_to_guess()
+                    self.player.open_mp3_string_and_play(f"Ecris : {target_word}")
+                    _LOGGER.info(f"Ecris: {target_word}")
                 else:
-                    _LOGGER.info(f"Guessed: {result}")
+                    _LOGGER.info(f"Guessed: {guess}")
                     self.player.open_mp3_string_and_play(
-                        f"Pas tout à fait... Ecris {to_guess}"
+                        f"Pas tout à fait... Ecris {target_word}"
                     )
-                    self._score[to_guess] = (score[0], score[1] + 1)
-            _letter = self.keyboard.get_one_letter()
+                    self._score[target_word].incorrect += 1
