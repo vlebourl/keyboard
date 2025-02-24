@@ -140,47 +140,44 @@ class Loop:
         return to_guess
 
     def loop(self):
+        modes = {
+            "1": self._run_classic_mode,
+            "2": self._run_guessing_mode,
+        }
         while True:
-            if self._mode == "1":
-                self._run_classic_mode()
-            elif self._mode == "2":
-                self._run_guessing_mode()
+            if self._mode not in modes:
+                self.select_game_mode()
+            try:
+                modes[self._mode]()  # run the mode loop until mode change
+            except Exception as e:
+                _LOGGER.error("Critical Exception: %s", e)
 
     def _run_classic_mode(self):
         _letter = self.keyboard.get_one_letter()
         while True:
-            try:
-                word = self._process_letter(_letter)
-                if word == MAGIC_KILL:
-                    break  # Break to possibly switch mode.
-                _letter = self.keyboard.get_one_letter()
-            except Exception as e:
-                _LOGGER.error("Critical Exception: %s", e)
+            word = self._process_letter(_letter)
+            if word == MAGIC_KILL:
+                break  # Break to possibly switch mode.
+            _letter = self.keyboard.get_one_letter()
 
     def _run_guessing_mode(self):
         to_guess = self.to_guess()
         _letter = self.keyboard.get_one_letter()
         while True:
-            try:
-                word = self._process_letter(_letter)
-                if _letter in {"\n", "\r"}:
-                    if word == MAGIC_KILL:
-                        break  # Break to change mode.
-                    result = word.lstrip("0") or "0"
-                    if result.strip() == to_guess:
-                        self.player.open_mp3_string_and_play("Bravo")
-                        score = self._score.get(to_guess, (0, 0))
-                        self._score[to_guess] = (score[0] + 1, score[1])
-                        to_guess = self.to_guess()
-                    else:
-                        _LOGGER.info(f"Guessed: {result}")
-                        self.player.open_mp3_string_and_play(
-                            f"Pas tout à fait... Ecris {to_guess}"
-                        )
-                        self._score[to_guess] = (
-                            self._score.get(to_guess, (0, 0))[0],
-                            self._score.get(to_guess, (0, 0))[1] + 1,
-                        )
-                _letter = self.keyboard.get_one_letter()
-            except Exception as e:
-                _LOGGER.error("Critical Exception: %s", e)
+            word = self._process_letter(_letter)
+            if _letter in {"\n", "\r"}:
+                if word == MAGIC_KILL:
+                    break  # Break to change mode.
+                result = word.lstrip("0") or "0"
+                score = self._score.get(to_guess, (0, 0))
+                if result.strip() == to_guess:
+                    self.player.open_mp3_string_and_play("Bravo")
+                    self._score[to_guess] = (score[0] + 1, score[1])
+                    to_guess = self.to_guess()
+                else:
+                    _LOGGER.info(f"Guessed: {result}")
+                    self.player.open_mp3_string_and_play(
+                        f"Pas tout à fait... Ecris {to_guess}"
+                    )
+                    self._score[to_guess] = (score[0], score[1] + 1)
+            _letter = self.keyboard.get_one_letter()
