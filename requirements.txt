@@ -1,5 +1,6 @@
-gtts
-num2words
-pygame
-requests
-pynput
+pygame>=2.5.0
+gTTS>=2.3.2
+requests>=2.31.0
+evdev>=1.6.1; platform_system == "Linux"  # Linux-only dependency
+pynput>=1.7.6
+num2words>=0.5.12
