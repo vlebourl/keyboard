@@ -5,7 +5,7 @@ import re
 import secrets
 import sys
 from dataclasses import dataclass
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS, COMMON_LETTERS, DICTIONARY, MODES
