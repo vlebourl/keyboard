@@ -169,10 +169,8 @@ class Loop:
                     result = word.lstrip("0") or "0"
                     if result.strip() == to_guess:
                         self.player.open_mp3_string_and_play("Bravo")
-                        self._score[to_guess] = (
-                            self._score.get(to_guess, (0, 0))[0] + 1,
-                            self._score.get(to_guess, (0, 0))[1],
-                        )
+                        score = self._score.get(to_guess, (0, 0))
+                        self._score[to_guess] = (score[0] + 1, score[1])
                         to_guess = self.to_guess()
                     else:
                         _LOGGER.info(f"Guessed: {result}")
