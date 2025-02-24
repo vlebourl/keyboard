@@ -3,6 +3,7 @@ import os
 import platform
 import re
 import secrets
+import string
 import sys
 
 from audio import PygameMP3Player
@@ -16,6 +17,8 @@ KB_UTIL = (
     if platform.system() == "Linux" and "DISPLAY" not in os.environ
     else "pynput"
 )
+
+MAGIC_KILL = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
 
 if KB_UTIL == "pynput":
     from keyboard_pynput import Keyboard
@@ -86,7 +89,7 @@ class Loop:
         if self.word == "changemode":
             self.select_game_mode()
             self.word = ""
-            return "kill_loop"
+            return MAGIC_KILL
         if self.word:
             self.word = self._process_numbers(self.word)
             _LOGGER.info("playing word: %s", self.word)
@@ -148,7 +151,7 @@ class Loop:
         while True:
             try:
                 word = self._process_letter(_letter)
-                if word == "kill_loop":
+                if word == MAGIC_KILL:
                     break  # Break to possibly switch mode.
                 _letter = self.keyboard.get_one_letter()
             except Exception as e:
@@ -161,7 +164,7 @@ class Loop:
             try:
                 word = self._process_letter(_letter)
                 if _letter in {"\n", "\r"}:
-                    if word == "kill_loop":
+                    if word == MAGIC_KILL:
                         break  # Break to change mode.
                     result = word.lstrip("0") or "0"
                     if result.strip() == to_guess:
