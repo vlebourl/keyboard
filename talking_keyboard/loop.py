@@ -91,12 +91,15 @@ class Loop:
             self.word = ""
             return MAGIC_KILL
         if self.word:
-            self.word = self._process_numbers(self.word)
-            _LOGGER.info("playing word: %s", self.word)
-            self.player.open_mp3_string_and_play(self.word)
-            word = self.word
-            self.word = ""
-            return word
+            return self._play_word()
+
+    def _play_word(self):
+        self.word = self._process_numbers(self.word)
+        _LOGGER.info("playing word: %s", self.word)
+        self.player.open_mp3_string_and_play(self.word)
+        word = self.word
+        self.word = ""
+        return word
 
     def preload(self):
         _LOGGER.info("Preloading common letters")
