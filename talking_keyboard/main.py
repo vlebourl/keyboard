@@ -58,16 +58,6 @@ def check_internet(url="https://www.google.com", timeout=5):
         return False
 
 
-# def update_wpa_supplicant(ssid, psk):
-#     wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
-
-#     with open(wpa_supplicant_path, "a") as f:
-#         f.write(f'\nnetwork={{\nssid="{ssid}"\npsk="{psk}"\n}}\n')
-
-#     subprocess.call(["sudo", "systemctl", "daemon-reload"])
-#     subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
-
-
 def get_user_input(prompt):
     user_input = ""
 
@@ -90,16 +80,6 @@ if __name__ == "__main__":
     if not wifi:
         _LOGGER.error("No internet connection for TTS")
         exit
-
-    # Check internet connection
-    # while not wifi:
-    #     time.sleep(2)
-    #     ssid = get_user_input("wifi SSID:")
-    #     psk = get_user_input("wifi PSK:")
-    #     update_wpa_supplicant(ssid, psk)
-    #     time.sleep(5)
-    #     wifi = check_internet()
-    #     time.sleep(2)
 
     loop = Loop()
     loop.preload()
