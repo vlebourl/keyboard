@@ -18,7 +18,7 @@ KB_UTIL = (
     else "pynput"
 )
 
-MAGIC_KILL = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
+MAGIC_KILL = "*-!this_is_a_safe_magic_string_to_kill_the_loop"
 
 if KB_UTIL == "pynput":
     from keyboard_pynput import Keyboard
