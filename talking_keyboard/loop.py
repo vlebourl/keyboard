@@ -20,6 +20,11 @@ KB_UTIL = (
     else "pynput"
 )
 MAGIC_KILL = "*-!this_is_a_safe_magic_string_to_kill_the_loop"
+# Command constants to avoid magic strings
+EXIT_NOWARN = "exitnowarn"
+PRINT_SCORE = "printscore"
+CHANGE_MODE = "changemode"
+ADD_WORD = "addword"
 
 if KB_UTIL == "pynput":
     from keyboard_pynput import Keyboard
@@ -116,18 +121,18 @@ class Loop:
         if not self.word:
             return ""
 
-        if self.word == "exitnowarn":
+        if self.word == EXIT_NOWARN:
             logging.warning("Exit the script")
             sys.exit(0)
-        elif self.word == "printscore":
+        elif self.word == PRINT_SCORE:
             self._print_scores()
             self.word = ""
             return ""
-        elif self.word == "changemode":
+        elif self.word == CHANGE_MODE:
             self.select_game_mode()
             self.word = ""
             return MAGIC_KILL
-        elif self.word == "addword":
+        elif self.word == ADD_WORD:
             self.add_word_to_dict()
             self.word = ""
             return ""
