@@ -144,6 +144,9 @@ class Loop:
             letter = self.keyboard.get_one_letter()  # Update the letter inside the loop
 
         self.player.open_mp3_string_and_play(f"Tu veux ajouter le mot {word}")
+        if not word.strip():
+            self.player.open_mp3_string_and_play("Aucun mot n'a été saisi.")
+            return
 
         # Verify that the word is not yet in DICTIONARY and add it
         if word in DICTIONARY:
