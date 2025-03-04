@@ -20,8 +20,7 @@ KB_UTIL = (
     if platform.system() == "Linux" and "DISPLAY" not in os.environ
     else "pynput"
 )
-MAGIC_KILL = "*-!this_is_a_safe_magic_string_to_kill_the_loop"
-# Command constants to avoid magic strings
+
 EXIT_NOWARN = "exitnowarn"
 PRINT_SCORE = "printscore"
 CHANGE_MODE = "changemode"
@@ -276,8 +275,6 @@ class Loop:
         while True:
             letter = self.keyboard.get_one_letter()
             word = self._process_letter(letter)
-            if word == MAGIC_KILL:
-                break
 
     def _run_guessing_mode(self, mode: GameMode) -> None:
         """Run the guessing mode game loop."""
@@ -294,8 +291,6 @@ class Loop:
             letter = self.keyboard.get_one_letter()
             word = self._process_letter(letter)
             if letter in {"\n", "\r"}:
-                if word == MAGIC_KILL:
-                    break
 
                 guess = word.lstrip("0") or "0"
                 if target_word not in self._score:
