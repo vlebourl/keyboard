@@ -59,7 +59,7 @@ The application automatically detects whether to use evdev or pynput based on yo
 ### Language & Voice Settings:
 Modify the VOICES list and default language within the TTS class in talking_keyboard/audio.py to tailor the speech output.
 
-### Preloading and Save Interval:
+### Preloading and Saving Interval:
 Adjust the preloading mechanism and the periodic saving interval in the code if you desire a more tailored performance.
 
 ## License
