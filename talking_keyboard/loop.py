@@ -6,6 +6,7 @@ import secrets
 import sys
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
+from enum import Enum
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS, COMMON_LETTERS, MODES
@@ -47,6 +48,18 @@ class GameScore:
     incorrect: int = 0
 
 
+class GameMode(Enum):
+    CLASSIC = "1"
+    GUESS_NUMBER = "2"
+    GUESS_WORD = "3"
+
+
+class LoopExitException(Exception):
+    """Custom exception to signal the loop to exit."""
+
+    pass
+
+
 class Loop:
     """Main class handling the keyboard input loop and game modes."""
 
@@ -56,7 +69,7 @@ class Loop:
         self.word_split_pattern = re.compile(r"[A-Za-z]+|\d+")
         self.keyboard = Keyboard()
         self.player = PygameMP3Player()
-        self._mode: str = "0"
+        self._mode: Optional[GameMode] = None
         self._score: Dict[str, GameScore] = {}
 
     def _process_numbers(self, word: str) -> str:
@@ -131,7 +144,7 @@ class Loop:
         elif self.word == CHANGE_MODE:
             self.select_game_mode()
             self.word = ""
-            return MAGIC_KILL
+            raise LoopExitException()
         elif self.word == ADD_WORD:
             self.add_word_to_dict()
             self.word = ""
@@ -211,14 +224,14 @@ class Loop:
         )
 
         selected_mode = ""
-        while selected_mode not in ["1", "2", "3"]:
+        while selected_mode not in [mode.value for mode in GameMode]:
             selected_mode = self.keyboard.get_one_letter()
             _LOGGER.info(selected_mode)
 
         self.player.open_mp3_string_and_play(
             f"Tu as choisis le mode {MODES[selected_mode]}"
         )
-        self._mode = selected_mode
+        self._mode = GameMode(selected_mode)
 
     def generate_number_to_guess(self) -> str:
         """Generate a random word or number for the guessing game.
@@ -242,9 +255,9 @@ class Loop:
     def loop(self) -> None:
         """Main game loop that handles different game modes."""
         modes = {
-            "1": self._run_classic_mode,
-            "2": self._run_guessing_mode,
-            "3": self._run_guessing_mode,
+            GameMode.CLASSIC: self._run_classic_mode,
+            GameMode.GUESS_NUMBER: self._run_guessing_mode,
+            GameMode.GUESS_WORD: self._run_guessing_mode,
         }
 
         while True:
@@ -252,24 +265,26 @@ class Loop:
                 self.select_game_mode()
             try:
                 modes[self._mode](self._mode)
+            except LoopExitException:
+                break
             except Exception as e:
                 _LOGGER.error("Critical Exception: %s", e)
 
-    def _run_classic_mode(self, mode: str) -> None:
+    def _run_classic_mode(self, mode: GameMode) -> None:
         """Run the classic mode game loop."""
-        _LOGGER.info(f"Running classic mode {mode}")
+        _LOGGER.info(f"Running classic mode {mode.value}")
         while True:
             letter = self.keyboard.get_one_letter()
             word = self._process_letter(letter)
             if word == MAGIC_KILL:
                 break
 
-    def _run_guessing_mode(self, mode: str) -> None:
+    def _run_guessing_mode(self, mode: GameMode) -> None:
         """Run the guessing mode game loop."""
-        _LOGGER.info(f"Running guessing mode {mode}")
-        if mode == "2":
+        _LOGGER.info(f"Running guessing mode {mode.value}")
+        if mode == GameMode.GUESS_NUMBER:
             generate = self.generate_number_to_guess
-        elif mode == "3":
+        elif mode == GameMode.GUESS_WORD:
             generate = self.generate_word_to_guess
         target_word = generate()
         self.player.open_mp3_string_and_play(f"Ecris : {target_word}")
