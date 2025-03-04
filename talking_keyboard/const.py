@@ -4,7 +4,7 @@ COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
 KEY_MAP = {"enter": "\n", "space": " "}
-MODES = {"1": "écriture libre", "2": "écris la proposition"}
+MODES = {"1": "écriture libre", "2": "écris le nombre", "3": "écris le mot"}
 EV_MAP = {
     "KEY_A": "q",
     "KEY_B": "b",
@@ -74,7 +74,7 @@ DIGITS_MAP = {
 MP3_DIR = "sounds"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dictionary_path = os.path.join(current_dir, "dictionary.list")
-with open(dictionary_path, encoding='utf-8') as f:
+with open(dictionary_path, encoding="utf-8") as f:
     DICTIONARY = [
         line.strip().lower().replace("é", "e").replace("è", "e").replace("à", "a")
         for line in f.readlines()
