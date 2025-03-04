@@ -76,13 +76,15 @@ def get_user_input(prompt):
 if __name__ == "__main__":
     _LOGGER.info("Starting talking keyboard")
 
+    loop = Loop()
+    loop.preload()
+
     wifi = check_internet()
     if not wifi:
         _LOGGER.error("No internet connection for TTS")
+        loop.player.open_mp3_string_and_play("internet non disponible")
         exit
 
-    loop = Loop()
-    loop.preload()
     loop.select_game_mode()
 
     save_thread = threading.Thread(

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
 from audio import PygameMP3Player
-from const import ALLOWED_CHARS, COMMON_LETTERS, DICTIONARY, MODES
+from const import ALLOWED_CHARS, COMMON_LETTERS, MODES
 from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,6 +27,11 @@ elif KB_UTIL == "evdev":
     from keyboard_evdev import Keyboard
 else:
     raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dictionary_path = os.path.join(current_dir, "dictionary.list")
+with open(dictionary_path, encoding="utf-8") as f:
+    DICTIONARY = [line.strip().lower() for line in f.readlines()]
 
 
 @dataclass
@@ -122,8 +127,30 @@ class Loop:
             self.select_game_mode()
             self.word = ""
             return MAGIC_KILL
+        elif self.word == "addword":
+            self.add_word_to_dict()
+            self.word = ""
+            return ""
 
         return self._play_word()
+
+    def add_word_to_dict(self) -> None:
+        """Add a word to the current dictionary"""
+        self.player.open_mp3_string_and_play("Ajoute un mot au dictionnaire")
+        word = ""
+        letter = self.keyboard.get_one_letter()
+        while letter not in {"\n", "\r"}:
+            word += letter
+            letter = self.keyboard.get_one_letter()  # Update the letter inside the loop
+
+        self.player.open_mp3_string_and_play(f"Tu veux ajouter le mot {word}")
+
+        # Verify that the word is not yet in DICTIONARY and add it
+        if word in DICTIONARY:
+            return
+        DICTIONARY.append(word)
+        with open(dictionary_path, "a+", encoding="utf-8") as f:
+            f.write(f"{word}\n")
 
     def _print_scores(self) -> None:
         """Print the current scores for all words."""
@@ -152,6 +179,9 @@ class Loop:
             if f" {letter} " not in self.player.generated_words:
                 _LOGGER.info("    Preloading letter: %s", letter)
                 self.player.preload_sound(f" {letter} ")
+
+        if "internet non disponible" not in self.player.generated_words:
+            self.player.preload_sound("internet non disponible")
 
         self.player.save_common_words()
         _LOGGER.info("Preloaded words are:")
