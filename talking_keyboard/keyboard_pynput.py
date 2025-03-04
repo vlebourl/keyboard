@@ -1,8 +1,9 @@
 import logging
 import queue
 
-from const import KEY_MAP
 from pynput import keyboard
+
+from const import KEY_MAP
 
 _LOGGER = logging.getLogger(__name__)
 

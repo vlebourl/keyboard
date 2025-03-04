@@ -5,6 +5,7 @@ import platform
 import threading
 
 import requests
+
 from loop import Loop
 
 KB_UTIL = (
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     _LOGGER.info("Starting talking keyboard")
 
     loop = Loop()
-    loop.preload()
+    loop.preload_resources()
 
     wifi = check_internet()
     if not wifi:
@@ -85,11 +86,11 @@ if __name__ == "__main__":
         loop.player.open_mp3_string_and_play("internet non disponible")
         exit
 
-    loop.select_game_mode()
+    loop.choose_game_mode()
 
     save_thread = threading.Thread(
         target=loop.player.periodic_save, args=(300,), daemon=True
     )
     save_thread.start()
 
-    loop.loop()
+    loop.run_game_loop()
