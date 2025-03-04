@@ -8,10 +8,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, Optional
 
-from num2words import num2words
-
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS, COMMON_LETTERS, MODES
+from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
 
