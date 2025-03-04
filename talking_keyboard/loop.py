@@ -156,9 +156,9 @@ class Loop:
         # Verify that the word is not yet in DICTIONARY and add it
         if word in DICTIONARY:
             return
-        DICTIONARY.append(word)
+        DICTIONARY.append(word.lower())
         with open(dictionary_path, "a+", encoding="utf-8") as f:
-            f.write(f"{word}\n")
+            f.write(f"{word.lower()}\n")
 
     def _print_scores(self) -> None:
         """Print the current scores for all words."""
