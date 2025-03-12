@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import platform
+import sys
 import threading
 
 import requests
@@ -42,7 +43,7 @@ if not isinstance(numeric_level, int):
 logging.basicConfig(
     level=numeric_level,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 
 _LOGGER = logging.getLogger(__name__)
