@@ -8,9 +8,10 @@ from audio import PygameMP3Player
 from const import COMMON_LETTERS, MODES
 from dictionary_manager import DictionaryManager
 from game_modes import ClassicModeHandler, GuessingModeHandler
-from keyboard import get_keyboard
 from score_manager import ScoreManager
 from word_processor import WordProcessor
+
+from keyboard import get_keyboard
 
 _LOGGER = logging.getLogger(__name__)
 

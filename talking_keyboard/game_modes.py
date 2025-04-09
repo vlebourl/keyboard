@@ -3,9 +3,10 @@ from typing import Callable, Optional
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS
-from keyboard import KeyboardWrapper
 from score_manager import ScoreManager
 from word_processor import WordProcessor
+
+from keyboard import KeyboardWrapper
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -4,7 +4,6 @@ import sys
 import threading
 
 import requests
-
 from loop import Loop
 
 
