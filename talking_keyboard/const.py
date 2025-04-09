@@ -1,4 +1,11 @@
 import os
+import platform
+
+KB_UTIL = (
+    "evdev"
+    if platform.system() == "Linux" and "DISPLAY" not in os.environ
+    else "pynput"
+)
 
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
@@ -57,6 +64,7 @@ EV_MAP = {
     "KEY_KP7": "7",
     "KEY_KP8": "8",
     "KEY_KP9": "9",
+    "KEY_BACKSLASH": "-",
     # Add other keys as needed
 }
 DIGITS_MAP = {

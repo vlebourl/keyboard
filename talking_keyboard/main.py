@@ -1,25 +1,11 @@
 import argparse
 import logging
-import os
-import platform
 import sys
 import threading
 
 import requests
+
 from loop import Loop
-
-KB_UTIL = (
-    "evdev"
-    if platform.system() == "Linux" and "DISPLAY" not in os.environ
-    else "pynput"
-)
-
-if KB_UTIL == "pynput":
-    from keyboard_pynput import Keyboard
-elif KB_UTIL == "evdev":
-    from keyboard_evdev import Keyboard
-else:
-    raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
 
 
 def parse_arguments():

@@ -7,8 +7,9 @@ import time
 
 import pygame
 import requests
-from const import COMMON_WORDS_FILE, MP3_DIR
 from gtts import gTTS
+
+from const import COMMON_WORDS_FILE, MP3_DIR
 
 _LOGGER = logging.getLogger(__name__)
 
