@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS
@@ -16,15 +16,13 @@ class GameModeHandler:
 
     def __init__(
         self,
-        player: PygameMP3Player,
-        keyboard: KeyboardWrapper,
-        word_processor: WordProcessor,
-        score_manager: ScoreManager,
+        game_manager: Any,
     ):
-        self.player = player
-        self.keyboard = keyboard
-        self.word_processor = word_processor
-        self.score_manager = score_manager
+        self.game_manager = game_manager
+        self.player = game_manager.player
+        self.keyboard = game_manager.keyboard
+        self.word_processor = game_manager.word_processor
+        self.score_manager = game_manager.score_manager
         self.current_word = ""
 
     def handle_letter_input(self, letter: str) -> Optional[str]:
@@ -35,7 +33,7 @@ class GameModeHandler:
             letter: La lettre saisie par l'utilisateur.
 
         Returns:
-            Une chaîne contenant une commande spéciale ou, 
+            Une chaîne contenant une commande spéciale ou,
             dans le cas contraire, une chaîne vide.
         """
         if letter in {"\n", "\r"}:
@@ -59,6 +57,15 @@ class GameModeHandler:
         self.current_word = self.word_processor.convert_numbers_in_text(
             self.current_word
         )
+
+        from game_manager import LoopExitException
+
+        try:
+            if self.game_manager.handle_special_commands(self.current_word):
+                return ""
+        except LoopExitException:
+            raise
+
         _LOGGER.info("Lecture du mot : %s", self.current_word)
         self.player.open_mp3_string_and_play(self.current_word)
         word_played = self.current_word
@@ -86,13 +93,10 @@ class GuessingModeHandler(GameModeHandler):
 
     def __init__(
         self,
-        player: PygameMP3Player,
-        keyboard: KeyboardWrapper,
-        word_processor: WordProcessor,
-        score_manager: ScoreManager,
+        game_manager: Any,
         generate_target: Callable[[], str],
     ):
-        super().__init__(player, keyboard, word_processor, score_manager)
+        super().__init__(game_manager)
         self.generate_target = generate_target
         self.target_word = ""
 

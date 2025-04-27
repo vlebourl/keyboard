@@ -9,7 +9,7 @@ KB_UTIL = (
 
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
-ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
+ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -")
 KEY_MAP = {"enter": "\n", "space": " "}
 MODES = {"1": "écriture libre", "2": "écris le nombre", "3": "écris le mot"}
 EV_MAP = {

@@ -51,7 +51,7 @@ class GameManager:
 
     def preload_resources(self) -> None:
         """
-        Précharge les sons associés aux lettres communes 
+        Précharge les sons associés aux lettres communes
         et affiche le message de bienvenue.
         """
         _LOGGER.info("Préchargement des lettres communes")
@@ -74,7 +74,7 @@ class GameManager:
 
     def choose_game_mode(self) -> None:
         """
-        Invite l'utilisateur à sélectionner un mode de jeu 
+        Invite l'utilisateur à sélectionner un mode de jeu
         et met à jour le mode courant.
         """
         _LOGGER.info("Sélection du mode de jeu :")
@@ -159,26 +159,15 @@ class GameManager:
 
             try:
                 if self.current_mode == GameMode.CLASSIC:
-                    handler = ClassicModeHandler(
-                        self.player,
-                        self.keyboard,
-                        self.word_processor,
-                        self.score_manager,
-                    )
+                    handler = ClassicModeHandler(self)
                 elif self.current_mode == GameMode.GUESS_NUMBER:
                     handler = GuessingModeHandler(
-                        self.player,
-                        self.keyboard,
-                        self.word_processor,
-                        self.score_manager,
+                        self,
                         self.generate_number_guess,
                     )
                 elif self.current_mode == GameMode.GUESS_WORD:
                     handler = GuessingModeHandler(
-                        self.player,
-                        self.keyboard,
-                        self.word_processor,
-                        self.score_manager,
+                        self,
                         self.dictionary_manager.generate_random_word,
                     )
                 else:
