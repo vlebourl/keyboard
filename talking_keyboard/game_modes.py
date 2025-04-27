@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional, Any
+from typing import Any, Callable, Optional
 
 from audio import PygameMP3Player
 from const import ALLOWED_CHARS
