@@ -1,12 +1,7 @@
 import logging
 from typing import Any, Callable, Optional
 
-from audio import PygameMP3Player
 from const import ALLOWED_CHARS
-from score_manager import ScoreManager
-from word_processor import WordProcessor
-
-from keyboard import KeyboardWrapper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -115,13 +110,17 @@ class GuessingModeHandler(GameModeHandler):
 
                 if guess.strip() == self.target_word:
                     self.player.open_mp3_string_and_play("Bravo")
-                    self.score_manager.update_score(self.target_word, True)
+                    self.score_manager.update_score(True)
                     self.target_word = self.generate_target()
                     self.player.open_mp3_string_and_play(f"Ecris : {self.target_word}")
                     _LOGGER.info(f"Ecris : {self.target_word}")
                 else:
                     _LOGGER.info(f"Devine : {guess}")
                     self.player.open_mp3_string_and_play(
-                        f"Pas tout à fait... Ecris {self.target_word}"
+                        f"""
+                        Pas tout à fait... 
+                        Ton score est de {self.score_manager.score}. 
+                        Écris {self.target_word}
+                        """
                     )
-                    self.score_manager.update_score(self.target_word, False)
+                    self.score_manager.reset_score()

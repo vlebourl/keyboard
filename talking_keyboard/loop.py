@@ -39,7 +39,7 @@ class Loop:
         self.word_split_pattern = self.game_manager.word_processor.word_split_pattern
         self.player = self.game_manager.player
         self.current_mode = None
-        self.scores = self.game_manager.score_manager.scores
+        self.scores = self.game_manager.score_manager.score
 
     def preload_resources(self) -> None:
         """Délègue au gestionnaire de jeu."""
