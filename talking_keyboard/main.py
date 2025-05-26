@@ -1,10 +1,24 @@
 import argparse
 import logging
-import sys
+import os
+import platform
 import threading
 
 import requests
 from loop import Loop
+
+KB_UTIL = (
+    "evdev"
+    if platform.system() == "Linux" and "DISPLAY" not in os.environ
+    else "pynput"
+)
+
+if KB_UTIL == "pynput":
+    from keyboard_pynput import Keyboard
+elif KB_UTIL == "evdev":
+    from keyboard_evdev import Keyboard
+else:
+    raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
 
 
 def parse_arguments():
@@ -28,7 +42,7 @@ if not isinstance(numeric_level, int):
 logging.basicConfig(
     level=numeric_level,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
+    handlers=[logging.StreamHandler()],
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +56,16 @@ def check_internet(url="https://www.google.com", timeout=5):
         return response.status_code == 200
     except requests.ConnectionError:
         return False
+
+
+# def update_wpa_supplicant(ssid, psk):
+#     wpa_supplicant_path = "/etc/wpa_supplicant/wpa_supplicant.conf"
+
+#     with open(wpa_supplicant_path, "a") as f:
+#         f.write(f'\nnetwork={{\nssid="{ssid}"\npsk="{psk}"\n}}\n')
+
+#     subprocess.call(["sudo", "systemctl", "daemon-reload"])
+#     subprocess.call(["sudo", "systemctl", "restart", "dhcpcd"])
 
 
 def get_user_input(prompt):
@@ -62,20 +86,27 @@ def get_user_input(prompt):
 if __name__ == "__main__":
     _LOGGER.info("Starting talking keyboard")
 
-    loop = Loop()
-    loop.preload_resources()
-
     wifi = check_internet()
     if not wifi:
         _LOGGER.error("No internet connection for TTS")
-        loop.player.open_mp3_string_and_play("internet non disponible")
         exit
 
-    loop.choose_game_mode()
+    # Check internet connection
+    # while not wifi:
+    #     time.sleep(2)
+    #     ssid = get_user_input("wifi SSID:")
+    #     psk = get_user_input("wifi PSK:")
+    #     update_wpa_supplicant(ssid, psk)
+    #     time.sleep(5)
+    #     wifi = check_internet()
+    #     time.sleep(2)
+
+    loop = Loop()
+    loop.preload()
 
     save_thread = threading.Thread(
         target=loop.player.periodic_save, args=(300,), daemon=True
     )
     save_thread.start()
 
-    loop.run_game_loop()
+    loop.loop()

@@ -1,17 +1,7 @@
-import os
-import platform
-
-KB_UTIL = (
-    "evdev"
-    if platform.system() == "Linux" and "DISPLAY" not in os.environ
-    else "pynput"
-)
-
 COMMON_WORDS_FILE = "common_words.json"
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
-ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -")
+ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
 KEY_MAP = {"enter": "\n", "space": " "}
-MODES = {"1": "écriture libre", "2": "écris le nombre", "3": "écris le mot"}
 EV_MAP = {
     "KEY_A": "q",
     "KEY_B": "b",
@@ -64,7 +54,6 @@ EV_MAP = {
     "KEY_KP7": "7",
     "KEY_KP8": "8",
     "KEY_KP9": "9",
-    "KEY_BACKSLASH": "-",
     # Add other keys as needed
 }
 DIGITS_MAP = {

@@ -1,148 +1,106 @@
 import logging
 import os
-from typing import Optional
+import platform
+import re
+import sys
 
-from const import ALLOWED_CHARS
-from game_manager import GameManager, GameMode, LoopExitException
-from game_modes import ClassicModeHandler, GuessingModeHandler
+from audio import PygameMP3Player
+from const import ALLOWED_CHARS, COMMON_LETTERS
+from num2words import num2words
 
 _LOGGER = logging.getLogger(__name__)
 
-# ============================================================
-# Configuration et Initialisation
-# ============================================================
 
-# Chargement du dictionnaire de mots
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dictionary_path = os.path.join(current_dir, "dictionary.list")
-with open(dictionary_path, encoding="utf-8") as f:
-    DICTIONARY = [line.strip().lower() for line in f.readlines()]
+KB_UTIL = (
+    "evdev"
+    if platform.system() == "Linux" and "DISPLAY" not in os.environ
+    else "pynput"
+)
 
-
-# ============================================================
-# Classe de compatibilité pour maintenir l'API existante
-# ============================================================
+if KB_UTIL == "pynput":
+    from keyboard_pynput import Keyboard
+elif KB_UTIL == "evdev":
+    from keyboard_evdev import Keyboard
+else:
+    raise ValueError(f"Unsupported KB_UTIL: {KB_UTIL}")
 
 
 class Loop:
-    """
-    Classe principale gérant la boucle d'entrée clavier et les différents modes de jeu.
-    Cette classe est maintenue pour la compatibilité avec le code existant.
-    """
+    word = ""
 
-    def __init__(self) -> None:
-        """Initialise le gestionnaire de jeu."""
-        self.game_manager = GameManager(dictionary_path, DICTIONARY)
+    def __init__(self):
+        self.word_split_pattern = re.compile(r"[A-Za-z]+|\d+")
+        self.keyboard = Keyboard()
+        self.player = PygameMP3Player()
 
-        # Pour la compatibilité avec le code existant
-        self.current_word = ""
-        self.word_split_pattern = self.game_manager.word_processor.word_split_pattern
-        self.player = self.game_manager.player
-        self.current_mode = None
-        self.scores = self.game_manager.score_manager.score
-
-    def preload_resources(self) -> None:
-        """Délègue au gestionnaire de jeu."""
-        self.game_manager.preload_resources()
-
-    def choose_game_mode(self) -> None:
-        """Délègue au gestionnaire de jeu."""
-        self.game_manager.choose_game_mode()
-        self.current_mode = self.game_manager.current_mode
-
-    def run_game_loop(self) -> None:
-        """Délègue au gestionnaire de jeu."""
-        self.game_manager.run_game_loop()
-
-    def add_word_to_dictionary(self) -> None:
-        """Délègue au gestionnaire de jeu."""
-        self.game_manager.add_word_to_dictionary()
-
-    def generate_number_guess(self) -> str:
-        """Délègue au gestionnaire de jeu."""
-        return self.game_manager.generate_number_guess()
-
-    def generate_dictionary_word(self) -> str:
-        """Délègue au gestionnaire de jeu."""
-        return self.game_manager.dictionary_manager.generate_random_word()
-
-    # Les méthodes privées sont maintenues pour la compatibilité
-    def _handle_letter_input(self, letter: str) -> Optional[str]:
-        """Méthode de compatibilité."""
-        self.current_word = self.game_manager.current_word
-        if letter in {"\n", "\r"}:
-            result = self._finalize_word()
-        elif letter not in ALLOWED_CHARS:
-            result = ""
+    def _process_numbers(self, word: str) -> str:
+        # Check for digits and return early if none are found
+        for char in word:
+            if char.isdigit():
+                break
         else:
-            _LOGGER.debug("Lettre reçue : %s", letter)
-            self.current_word += letter
-            letter_sound = "espace" if letter == " " else letter
-            self.player.open_mp3_string_and_play(f" {letter_sound} ")
-            result = ""
-        self.game_manager.current_word = self.current_word
-        return result
+            return word
 
-    def _finalize_word(self) -> str:
-        """Méthode de compatibilité."""
-        final_word = self.current_word.strip()
-        command = final_word.lower()
-        if not final_word:
-            return ""
+        # Split the word into alphanumeric and numeric parts
+        words = self.word_split_pattern.findall(word)
 
-        try:
-            if self.game_manager.handle_special_commands(command):
-                return ""
-        except LoopExitException:
-            raise
+        for i, part in enumerate(words):
+            if part.isdigit():
+                words[i] = self._convert_number_to_words(part)
 
-        return self._finalize_and_play_word()
-
-    def _finalize_and_play_word(self) -> str:
-        """Méthode de compatibilité."""
-        self.current_word = self.game_manager.word_processor.convert_numbers_in_text(
-            self.current_word
-        )
-        _LOGGER.info("Lecture du mot : %s", self.current_word)
-        self.player.open_mp3_string_and_play(self.current_word)
-        word_played = self.current_word
-        self.current_word = ""
-        return word_played
-
-    def _convert_numbers_in_text(self, text: str) -> str:
-        """Méthode de compatibilité."""
-        return self.game_manager.word_processor.convert_numbers_in_text(text)
+        return " ".join(words)
 
     def _convert_number_to_words(self, number: str) -> str:
-        """Méthode de compatibilité."""
-        return self.game_manager.word_processor.convert_number_to_words(number)
-
-    def _display_scores(self) -> None:
-        """Méthode de compatibilité."""
-        self.game_manager.score_manager.display_scores()
-
-    def _run_classic_mode_loop(self, mode: GameMode) -> None:
-        """Méthode de compatibilité."""
-        handler = ClassicModeHandler(
-            self.player,
-            self.game_manager.keyboard,
-            self.game_manager.word_processor,
-            self.game_manager.score_manager,
+        # Convert the number to words (assuming num2words is a function that does this)
+        words = num2words(number, lang="fr_CH")
+        words = words.replace("huitante", "quatre-vingt").replace(
+            "vingt et un", "vingt-et-un"
         )
-        handler.run()
+        return words
 
-    def _run_guessing_mode_loop(self, mode: GameMode) -> None:
-        """Méthode de compatibilité."""
-        if mode == GameMode.GUESS_NUMBER:
-            generate = self.generate_number_guess
-        elif mode == GameMode.GUESS_WORD:
-            generate = self.generate_dictionary_word
+    def _process_letter(self, _letter: str) -> None:
+        if _letter in {"\n", "\r"}:
+            self._process_word()
+            return
+        if _letter not in ALLOWED_CHARS:
+            return
+        _LOGGER.debug("Got letter: %s", _letter)
+        self.word += _letter
+        _letter = "espace" if _letter == " " else _letter
+        self.player.open_mp3_string_and_play(f" {_letter} ")
 
-        handler = GuessingModeHandler(
-            self.player,
-            self.game_manager.keyboard,
-            self.game_manager.word_processor,
-            self.game_manager.score_manager,
-            generate,
-        )
-        handler.run()
+    def _process_word(self):
+        self.word = self.word.strip()
+        if len(self.word) == 0:
+            return
+        if self.word == "exitnowarn":
+            logging.warning("Exit the script")
+            sys.exit(0)
+        if self.word:
+            self.word = self._process_numbers(self.word)
+            _LOGGER.info("playing word: %s", self.word)
+            self.player.open_mp3_string_and_play(self.word)
+            self.word = ""
+
+    def preload(self):
+        _LOGGER.info("Preloading common letters")
+        for letter in COMMON_LETTERS:
+            if f" {letter} " not in self.player.generated_words:
+                _LOGGER.info("    Preloading letter: %s", letter)
+                self.player.preload_sound(f" {letter} ")
+        self.player.save_common_words()
+        _LOGGER.info("Preloaded words are:")
+        for word in self.player.generated_words.keys():
+            _LOGGER.info("    %s", word)
+        self.word = "Bonjour, bienvenue sur le clavier parlant."
+        self._process_letter("\n")
+
+    def loop(self):
+        _LOGGER.debug("Starting main loop")
+        _letter = self.keyboard.get_one_letter()
+        while True:
+            try:
+                self._process_letter(_letter)
+                _letter = self.keyboard.get_one_letter()
+            except Exception as e:
+                _LOGGER.error("Critical Exception: %s", e)

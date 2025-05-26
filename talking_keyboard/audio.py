@@ -79,7 +79,7 @@ class PygameMP3Player:
 
     def open_mp3_string_and_play(self, text):
         filename = self.generated_words.get(text, None)
-        if filename is None or not os.path.exists(filename):
+        if filename is None:
             mp3_data = self.tts.generate(text)
             filename = os.path.join(MP3_DIR, f"{text}.mp3")
             with open(filename, "wb") as f:

@@ -24,6 +24,7 @@ jobs:
           pyupgrade==3.3.1 \
           black==22.10.0 \
           click==8.0.4 \
+          codespell==2.2.2 \
           ruff==0.0.261 \
           isort==5.10.1 \
 
@@ -32,6 +33,10 @@ jobs:
 
     - name: Install dependencies
       run: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+
+    - name: Run codespell
+      run: |
+        codespell --ignore-words-list=threshold,espace,hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing --skip="./.*,*.csv,*.json,*.md" --quiet-level=2
 
     - name: Run ruff
       run: |
