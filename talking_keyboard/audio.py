@@ -8,7 +8,7 @@ import wave
 
 import pygame
 import requests
-from const import COMMON_WORDS_FILE, MP3_DIR, PIPER_MODEL_PATH, PIPER_SPEAKER_JESSICA
+from const import COMMON_WORDS_FILE, MP3_DIR, PIPER_LENGTH_SCALE, PIPER_MODEL_PATH, PIPER_SPEAKER_JESSICA
 from gtts import gTTS
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class PiperTTS:
     def generate(self, text, retries=1):
         try:
             from piper.config import SynthesisConfig
-            syn_config = SynthesisConfig(speaker_id=self._speaker_id)
+            syn_config = SynthesisConfig(speaker_id=self._speaker_id, length_scale=PIPER_LENGTH_SCALE)
             buf = io.BytesIO()
             with wave.open(buf, "wb") as wf:
                 self._voice.synthesize_wav(text, wf, syn_config=syn_config)
