@@ -24,11 +24,18 @@ fi
 # 2. System dependencies
 echo ">>> Installing system dependencies..."
 sudo apt-get update -qq
+# apt may exit non-zero due to unrelated half-configured packages (e.g. wm8960 DKMS).
+# We install with || true and then verify our deps are actually present.
 sudo apt-get install -y --no-install-recommends \
     espeak-ng \
     libespeak-ng1 \
     libsndfile1 \
-    python3-dev
+    python3-dev || true
+for pkg in espeak-ng libespeak-ng1 libsndfile1 python3-dev; do
+    dpkg -l "$pkg" 2>/dev/null | grep -q "^ii" \
+        || { echo "ERROR: $pkg is not installed — fix apt before continuing"; exit 1; }
+done
+echo "  All system dependencies present."
 
 # 3. Install piper-tts Python package
 echo ""
