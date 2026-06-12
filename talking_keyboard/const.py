@@ -1,4 +1,7 @@
 COMMON_WORDS_FILE = "common_words.json"
+PIPER_MODEL_PATH = "models/fr_FR-upmc-medium.onnx"
+PIPER_SPEAKER_JESSICA = 0
+PIPER_SPEAKER_PIERRE = 1
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 ALLOWED_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
 KEY_MAP = {"enter": "\n", "space": " "}

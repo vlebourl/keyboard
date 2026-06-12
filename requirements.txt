@@ -3,3 +3,4 @@ num2words
 pygame
 requests
 pynput
+piper-tts

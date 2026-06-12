@@ -4,16 +4,19 @@ import json
 import logging
 import os
 import time
+import wave
 
 import pygame
 import requests
-from const import COMMON_WORDS_FILE, MP3_DIR
+from const import COMMON_WORDS_FILE, MP3_DIR, PIPER_MODEL_PATH, PIPER_SPEAKER_JESSICA
 from gtts import gTTS
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class GoogleTTS:
+    file_ext = "mp3"
+
     def __init__(self, language="fr"):
         self._language = language[:2]
 
@@ -41,11 +44,33 @@ class GoogleTTS:
         return None
 
 
+class PiperTTS:
+    file_ext = "wav"
+
+    def __init__(self, model_path=PIPER_MODEL_PATH, speaker_id=PIPER_SPEAKER_JESSICA):
+        from piper.voice import PiperVoice  # lazy import — piper may not be installed
+        self._voice = PiperVoice.load(model_path)
+        self._speaker_id = speaker_id
+
+    def set_voice(self, *_args):
+        pass  # voice is fixed at load time
+
+    def generate(self, text, retries=1):
+        try:
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as wf:
+                self._voice.synthesize(text, wf, speaker_id=self._speaker_id)
+            return buf.getvalue()
+        except Exception as e:
+            _LOGGER.error("Piper TTS error for '%s': %s", text, e)
+            return None
+
+
 class PygameMP3Player:
-    def __init__(self):
+    def __init__(self, tts=None):
         if not os.path.exists(MP3_DIR):
             os.makedirs(MP3_DIR)
-        self.tts = GoogleTTS()
+        self.tts = tts if tts is not None else GoogleTTS()
         self.generated_words = {}
         self.word_count = {}
 
@@ -63,11 +88,11 @@ class PygameMP3Player:
             raise
 
     def preload_sound(self, text):
-        filename = os.path.join(MP3_DIR, f"{text}.mp3")
+        filename = os.path.join(MP3_DIR, f"{text}.{self.tts.file_ext}")
         if not os.path.isfile(filename):
-            mp3_data = self.tts.generate(text)
+            audio_data = self.tts.generate(text)
             with open(filename, "wb") as f:
-                f.write(mp3_data)
+                f.write(audio_data)
         self.generated_words[text] = filename
 
     def play_mp3_file(self, filename):
@@ -78,12 +103,13 @@ class PygameMP3Player:
             time.sleep(0.001)
 
     def open_mp3_string_and_play(self, text):
-        filename = self.generated_words.get(text, None)
-        if filename is None:
-            mp3_data = self.tts.generate(text)
-            filename = os.path.join(MP3_DIR, f"{text}.mp3")
+        filename = self.generated_words.get(text)
+        # regenerate if cached path is missing or uses a different engine's extension
+        if filename is None or not os.path.isfile(filename):
+            audio_data = self.tts.generate(text)
+            filename = os.path.join(MP3_DIR, f"{text}.{self.tts.file_ext}")
             with open(filename, "wb") as f:
-                f.write(mp3_data)
+                f.write(audio_data)
             self.generated_words[text] = filename
 
         self.play_mp3_file(filename)

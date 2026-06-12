@@ -130,5 +130,7 @@ dmypy.json
 
 sounds/
 common_words.json
+models/*.onnx
+models/*.onnx.json
 
 .vscode/
