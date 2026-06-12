@@ -57,16 +57,11 @@ class PiperTTS:
 
     def generate(self, text, retries=1):
         try:
-            # synthesize_stream_raw returns raw 16-bit PCM; build WAV header manually
-            raw_audio = b"".join(
-                self._voice.synthesize_stream_raw(text, speaker_id=self._speaker_id)
-            )
+            from piper.config import SynthesisConfig
+            syn_config = SynthesisConfig(speaker_id=self._speaker_id)
             buf = io.BytesIO()
             with wave.open(buf, "wb") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)  # 16-bit
-                wf.setframerate(self._voice.config.sample_rate)
-                wf.writeframes(raw_audio)
+                self._voice.synthesize_wav(text, wf, syn_config=syn_config)
             return buf.getvalue()
         except Exception as e:
             _LOGGER.error("Piper TTS error for '%s': %s", text, e)
