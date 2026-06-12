@@ -5,6 +5,7 @@ import platform
 import threading
 
 import requests
+from audio import GoogleTTS, PiperTTS, PygameMP3Player
 from loop import Loop
 
 KB_UTIL = (
@@ -83,25 +84,61 @@ def get_user_input(prompt):
     return user_input
 
 
+_BOOTSTRAP_PROMPTS = {
+    "tts_choice": "Appuyez sur 1 pour la voix locale, ou sur 2 pour la voix internet.",
+    "no_internet": "Pas de connexion internet. La voix locale sera utilisée.",
+}
+
+_BOOTSTRAP_SOUNDS_DIR = "sounds/bootstrap"
+
+
+def _ensure_bootstrap_audio():
+    """Pre-generate bootstrap prompts with piper so they're always available."""
+    os.makedirs(_BOOTSTRAP_SOUNDS_DIR, exist_ok=True)
+    try:
+        piper = PiperTTS()
+        for key, text in _BOOTSTRAP_PROMPTS.items():
+            path = os.path.join(_BOOTSTRAP_SOUNDS_DIR, f"{key}.wav")
+            if not os.path.isfile(path):
+                _LOGGER.info("Generating bootstrap audio: %s", key)
+                audio = piper.generate(text)
+                if audio:
+                    with open(path, "wb") as f:
+                        f.write(audio)
+    except Exception as e:
+        _LOGGER.warning("Could not pre-generate bootstrap audio: %s", e)
+
+
+def _play_bootstrap(player, key):
+    path = os.path.join(_BOOTSTRAP_SOUNDS_DIR, f"{key}.wav")
+    if os.path.isfile(path):
+        player.play_mp3_file(path)
+    else:
+        _LOGGER.warning("Bootstrap audio missing: %s", path)
+
+
 if __name__ == "__main__":
     _LOGGER.info("Starting talking keyboard")
 
+    keyboard = Keyboard()
+
+    # Bootstrap player uses piper regardless of later TTS choice
+    bootstrap_player = PygameMP3Player(tts=PiperTTS())
+    _ensure_bootstrap_audio()
+
     wifi = check_internet()
-    if not wifi:
-        _LOGGER.error("No internet connection for TTS")
-        exit
 
-    # Check internet connection
-    # while not wifi:
-    #     time.sleep(2)
-    #     ssid = get_user_input("wifi SSID:")
-    #     psk = get_user_input("wifi PSK:")
-    #     update_wpa_supplicant(ssid, psk)
-    #     time.sleep(5)
-    #     wifi = check_internet()
-    #     time.sleep(2)
+    if wifi:
+        _play_bootstrap(bootstrap_player, "tts_choice")
+        key = keyboard.get_one_letter()
+        tts = PiperTTS() if key == "1" else GoogleTTS()
+        _LOGGER.info("TTS engine selected: %s", type(tts).__name__)
+    else:
+        _LOGGER.warning("No internet — defaulting to local TTS (piper)")
+        _play_bootstrap(bootstrap_player, "no_internet")
+        tts = PiperTTS()
 
-    loop = Loop()
+    loop = Loop(keyboard=keyboard, tts=tts)
     loop.preload()
 
     save_thread = threading.Thread(

@@ -28,10 +28,10 @@ else:
 class Loop:
     word = ""
 
-    def __init__(self):
+    def __init__(self, keyboard=None, tts=None):
         self.word_split_pattern = re.compile(r"[A-Za-z]+|\d+")
-        self.keyboard = Keyboard()
-        self.player = PygameMP3Player()
+        self.keyboard = keyboard if keyboard is not None else Keyboard()
+        self.player = PygameMP3Player(tts=tts)
 
     def _process_numbers(self, word: str) -> str:
         # Check for digits and return early if none are found
