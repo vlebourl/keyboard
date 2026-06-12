@@ -38,10 +38,11 @@ done
 echo "  All system dependencies present."
 
 # 3. Install piper-tts Python package
+# Bookworm (PEP 668) forbids system-wide pip installs by default.
+# The project already uses --break-system-packages (gtts is in /usr/local/lib).
 echo ""
 echo ">>> Installing piper-tts Python package..."
-pip install --upgrade pip
-pip install piper-tts
+pip3 install --break-system-packages piper-tts
 
 # 4. Download voice model
 echo ""
