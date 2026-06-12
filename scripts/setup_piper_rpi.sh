@@ -69,9 +69,9 @@ fi
 # 5. Quick smoke test
 echo ""
 echo ">>> Smoke test: synthesizing a short phrase..."
-python3 - <<'PYEOF'
+REPO_ROOT="$REPO_ROOT" python3 - <<PYEOF
 import sys, os
-repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+repo_root = os.environ["REPO_ROOT"]
 sys.path.insert(0, os.path.join(repo_root, 'talking_keyboard'))
 os.chdir(os.path.join(repo_root, 'talking_keyboard'))
 from audio import PiperTTS
@@ -87,9 +87,9 @@ PYEOF
 # 6. Pre-generate bootstrap audio
 echo ""
 echo ">>> Pre-generating bootstrap audio prompts..."
-python3 - <<'PYEOF'
+REPO_ROOT="$REPO_ROOT" python3 - <<PYEOF
 import sys, os
-repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+repo_root = os.environ["REPO_ROOT"]
 sys.path.insert(0, os.path.join(repo_root, 'talking_keyboard'))
 os.chdir(os.path.join(repo_root, 'talking_keyboard'))
 from main import _ensure_bootstrap_audio
