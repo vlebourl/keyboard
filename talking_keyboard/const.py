@@ -1,5 +1,8 @@
+import os as _os
+_HERE = _os.path.dirname(_os.path.abspath(__file__))
+
 COMMON_WORDS_FILE = "common_words.json"
-PIPER_MODEL_PATH = "models/fr_FR-upmc-medium.onnx"
+PIPER_MODEL_PATH = _os.path.join(_HERE, "..", "models", "fr_FR-upmc-medium.onnx")
 PIPER_SPEAKER_JESSICA = 0
 PIPER_SPEAKER_PIERRE = 1
 COMMON_LETTERS = "abcdefghijklmnopqrstuvwxyz1234567890"
